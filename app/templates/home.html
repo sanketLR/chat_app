@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .main{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .sub{
+        width: 80vw;
+        border: 1px solid black;
+        border-radius: 1rem;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+    }
+    tr td{
+        border:1px solid black;
+        padding: 5px;
+    }
+</style>
+<body>
+
+<div class="main">
+    <div class="sub">
+        <table>
+            <thead>
+                <tr>
+                    <th>e</th>
+                    <th>E</th>
+                    <th>s</th>
+                    <th>t</th>
+                    <th>p</th>
+                    <th>q</th>
+                    <th>b</th>
+                    <th>a</th>
+                    <th>T</th>
+                    <th>m</th>
+                    <th>M</th>
+                </tr>
+            </thead>
+            <tbody id="tradeData">
+               
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
+
+<script>
+    var ws = new WebSocket('ws://127.0.0.1:8000/ws/Trade/')
+
+
+    // using Method 
+
+    ws.onopen = function (){
+        console.log("WebSocket Connection open...")
+        ws.send('Hii, Message from client...')
+    }
+
+    ws.onmessage = function(event){
+        console.log("Message recieve from server ...", event.data)
+        var data = JSON.parse(event.data)
+        let html = "<tr>";
+        html += "<td>" + data.e + "</td>";
+        html += "<td>" + data.E + "</td>";
+        html += "<td>" + data.s + "</td>";
+        html += "<td>" + data.t + "</td>";
+        html += "<td>" + data.p + "</td>";
+        html += "<td>" + data.q + "</td>";
+        html += "<td>" + data.b + "</td>";
+        html += "<td>" + data.a + "</td>";
+        html += "<td>" + data.T + "</td>";
+        html += "<td>" + data.m + "</td>";
+        html += "<td>" + data.M + "</td>";
+        // Add more columns if needed
+        html += "</tr>";
+
+        // Append the new row to the table body
+        document.getElementById("tradeData").innerHTML = html;
+    }
+
+    ws.onerror = function(event){
+        console.log("WebSocket error occured ...")
+    }
+
+    ws.onclose = function(event){
+        console.log("Connection closed ...")
+    }
+
+</script> 
