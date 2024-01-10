@@ -1,5 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer, SyncConsumer, AsyncConsumer
+from channels.consumer import SyncConsumer
 from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
 import websockets
@@ -7,6 +8,7 @@ from . models import Message,Chat_Room
 from django.contrib.auth.models import User
 import asyncio
 from . models import *
+from channels.db import database_sync_to_async
 
 
 class MySyncConsumer(SyncConsumer):
@@ -50,13 +52,20 @@ class MyAsyncConsumer(AsyncConsumer):
         raise StopConsumer()
 
 
-class TradeConsumer(AsyncWebsocketConsumer):
 
-    # async def connect(self):
-    #     print("conntect")
-    #     await self.accept()
+class TradeConsumer(AsyncWebsocketConsumer):
+    
+    async def connect_to_websocket(self, uris):
+        connections = []
+
+        for uri in uris:
+            connection = await websockets.connect(uri)
+            connections.append(connection)
+
+        return connections
 
     async def connect(self):
+
         await self.accept()
 
         await self.channel_layer.group_add(
@@ -64,44 +73,76 @@ class TradeConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-        uri = "wss://stream.binance.com:9443/ws/btcusdt@trade"
+        uri_lst = [
+            "wss://stream.binance.com:9443/ws/btcusdt@trade",
+            "wss://stream.binance.com:9443/ws/ethusdt@trade",
+            "wss://stream.binance.com:9443/ws/mtcusdt@trade", #
+            "wss://stream.binance.com:9443/ws/dotusdt@trade",
+            "wss://stream.binance.com:9443/ws/adausdt@trade",
+            "wss://stream.binance.com:9443/ws/ethbtc@trade",
+            "wss://stream.binance.com:9443/ws/axsbtc@trade"
+        ]
         
-        async with websockets.connect(uri) as  binance_ws:
-            while True:
-                response = await binance_ws.recv()
+        connections = await self.connect_to_websocket(uri_lst)
+        tasks = [self.receive_data(connection) for connection in connections]
+        print("➡ tasks :", tasks)
+        await asyncio.gather(*tasks)
 
-                # print("➡ response :", response)
-                print("➡ response :", type(response))
-
+    async def receive_data(self, connection):
+        while True:
+            try:
+                response = await connection.recv()
                 await self.saveTrade(response)
-
                 await self.send(response)
-                await asyncio.sleep(2)
-    
-    async def saveTrade(self, data):
-        try:
-            str_to_dict =  json.loads(data)
-            print("➡ json_data :", str_to_dict)
-            print("➡ json_data :", type(str_to_dict))
-
-            dit_to_json = json.dumps(str_to_dict)
-            print("➡ dit_to_json :", type(dit_to_json))
-            if dit_to_json is not None:
-                tdata = TradeData.objects.create(tradeJson = dit_to_json)
-                print("➡ tdata :", tdata)
-        except Exception as e:
-            print("EXCEPTION OCCUR", e)
-        # print("➡ data :", json.dumps(data))
+            except websockets.ConnectionClosed:
+                # Handle connection closed if needed
+                break
+            await asyncio.sleep(2)
 
 
-    # async def disconnect(self, event):
-    #     print("disconnect")
-    #     raise StopConsumer()
-    
-    # async def receiver(self, data):
-    #     print("receiver data")
-    #     print(data)
-    #     await self.send(data = data)
+    @database_sync_to_async
+    def saveTrade(self, data1):
+
+        json_data1 = json.loads(data1)
+        get_trade_name = json_data1["s"]
+        # json_data2 = json.loads(data2)
+
+        # print("➡ json_data:", json_data)
+        # print("➡ json_data type:", type(json_data))
+        
+        if json_data1:
+            TradeData.objects.create(tradeJson=json_data1, tradeName = get_trade_name)
+
+        # if json_data2:
+        #     TradeData.objects.create(tradeJson=json_data1, tradeName = "ethusdt")
+
+    async def disconnect(self, event):
+        await self.close()
+
+# class TradeConsumer(AsyncWebsocketConsumer):
+
+#     async def connect(self):
+#         await self.accept()
+
+#         uri = "wss://stream.binance.com:9443/ws/btcusdt@trade"
+        
+#         async with websockets.connect(uri) as binance_ws:
+
+#             while True:
+
+#                 response = await binance_ws.recv()
+
+#                 await self.save_trade(response)
+
+#                 await self.send(response)
+
+#                 await asyncio.sleep(2)
+
+#     @sync_to_async
+#     def save_trade(self, data):
+#         json_data = json.loads(data)
+#         if json_data:
+#             TradeData.objects.create(tradeJson=json_data)
         
         
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -123,6 +164,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         raise StopConsumer()
+
 
     async def receive(self,text_data):
         print("berfor text data= ", type(text_data))

@@ -23,7 +23,8 @@ class Message(models.Model):
         return self.content + self.room.cr_name
     
 class TradeData(models.Model):
+    tradeName = models.CharField(max_length = 200, null = True, blank = True)
     tradeJson = models.JSONField()
 
     def __str__(self):
-        return str(self.id)
+        return self.tradeJson["s"]
