@@ -61,7 +61,7 @@ class CreateUser(APIView):
                     return get_response(status.HTTP_400_BAD_REQUEST, get_status_msg('USER_NOT_ACTIVE'), get_status_msg('ERROR_400'))
                     
                 refresh, access = get_tokens_for_user(user) 
-                # login(request, user)
+                
                 res = serializer.data
 
                 res["refresh"] = refresh
@@ -105,7 +105,7 @@ class SignInUser(APIView):
                     "access" :access,
                     "refresh" : refresh
                 }
-                
+
                 return get_response(status.HTTP_200_OK, Token , get_status_msg('LOGGED_IN'))
 
         else:
