@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
+{% load static %}
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Chat App</title>
+
+    <script src="{% static "js/check_token.js" %}"></script>
+
 
     <!-- Include Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -68,39 +71,67 @@
 
         <!-- List of Cards -->
         <div class="card-container">
-            <div class="card text-black">
-                <h2 class="text-xl font-semibold mb-2">Chat Room 1</h2>
-                <p>Description of Chat Room 1.</p>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Join</button>
-            </div>
-
-            <div class="card text-black">
-                <h2 class="text-xl font-semibold mb-2">Chat Room 2</h2>
-                <p>Description of Chat Room 2.</p>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Join</button>
-            </div>
-
-            <div class="card text-black">
-                <h2 class="text-xl font-semibold mb-2">Chat Room 2</h2>
-                <p>Description of Chat Room 2.</p>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Join</button>
-            </div>
-
-            <div class="card text-black">
-                <h2 class="text-xl font-semibold mb-2">Chat Room 2</h2>
-                <p>Description of Chat Room 2.</p>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Join</button>
-            </div>
-
-            <div class="card text-black">
-                <h2 class="text-xl font-semibold mb-2">Chat Room 2</h2>
-                <p>Description of Chat Room 2.</p>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-md">Join</button>
-            </div>
 
         </div>
     </main>
 
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+
+            const accessToken = localStorage.getItem("accessToken");
+            const refreshToken = localStorage.getItem("refreshToken");
+    
+            $.ajax({
+                url: 'http://127.0.0.1:8000/api/messenger/RoomsList/',
+                type: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+
+                dataType: 'json',
+                
+                success: function (data) {
+
+                    if (data.code === 200) {
+
+                        const cardContainer = $(".card-container");
+
+                        for (let i = 0; i < data.data.length; i++) {
+                            const roomName = data.data[i].cr_name;
+                            const roomDisc = data.data[i].cr_discription;
+
+                            const description = roomDisc;
+                    
+                            // Create a new card element
+                            const card = $("<div class='card text-black'>");
+
+                            // Add content to the card
+                            card.append("<h2 class='text-xl font-semibold mb-2'>" + roomName + "</h2>");
+                            card.append("<p>" + description + "</p></br>");
+                            card.append("<a href='' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
+
+                            // Append the card to the card container
+                            cardContainer.append(card);
+                        }
+                    }
+
+                    if (data.code === 400) {
+                        console.log("400 come");
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error.message);
+                }
+            });
+        });
+    </script>
+    
+    
     <script>
         document.addEventListener('DOMContentLoaded', function(e){
 
@@ -114,6 +145,7 @@
 
         })
     </script>
+
 
 </body>
 

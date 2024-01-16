@@ -45,12 +45,12 @@
                 {% csrf_token %}
                 <div class="flex flex-col">
                     <label for="username" class="text-lg">Username:</label>
-                    <input type="text" id="username" name="username" class="p-2 rounded-md text-black	" required>
+                    <input type="text" id="username" name="username" class="p-2 rounded-md text-black" required>
                 </div>
 
                 <div class="flex flex-col">
                     <label for="password" class="text-lg">Password:</label>
-                    <input type="password" id="password" name="password" class="p-2 rounded-md text-black	" required>
+                    <input type="password" id="password" name="password" class="p-2 rounded-md text-black" required>
                 </div>
 
                 <button type="button" id="SignInUser" class="bg-blue-500 text-white px-4 py-2 rounded-md">Sign In</button>
@@ -61,6 +61,7 @@
     <script>
 
         async function signIn() {
+
             let userName = document.getElementById("username").value
             let password = document.getElementById("password").value
 
@@ -70,6 +71,7 @@
                 "username" : userName,
                 "password" : password
             }
+            
             try {
                 const response = await fetch('http://127.0.0.1:8000/api/messenger/SignInUser/', {
                     method: 'POST',

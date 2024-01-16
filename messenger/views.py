@@ -6,10 +6,10 @@ from asgiref.sync import async_to_sync
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction
-from . models import *
-from . serializers import *
+from messenger.models import *
+from messenger.serializers import *
 import time
-from  . utils import *
+from chat_app.utils import *
 from django.contrib.auth.models import User
 from django.contrib.auth import (
     login, 
@@ -133,6 +133,24 @@ class UserLogout(APIView):
 
             return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('INVALID_TOKEN'))
         
+
+class RoomsList(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        get_room_queryset =  Chat_Room.objects.all()
+
+        serializer = ChatRoomSerializer(get_room_queryset, many = True)
+
+        if serializer is not None:
+
+            return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('RETRIEVE'))
+        
+        return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('NO_ROOMS'))
+
 
 class LoadChatData(APIView):
 

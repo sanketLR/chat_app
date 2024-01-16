@@ -26,3 +26,12 @@ class MessageSerializer(serializers.ModelSerializer):
     # Define the method to get the 'username' for the 'user' field
     def get_user(self, obj):
         return obj.user.username
+
+class ChatRoomSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Chat_Room
+        fields = [
+            "cr_name",
+            "cr_discription"
+        ]

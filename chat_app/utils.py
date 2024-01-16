@@ -46,6 +46,7 @@ def get_status_msg(key):
         'DATA_NOT_FOUND': "data not found.",
         'USER_NOT_FOUND': "user not found.",
         'OK': 'ok',
+        'NO_ROOMS' : "No rooms avaliabe",
         'INVALID_PHONENO': 'Invalid phone_no',
         'INVALID_CATEGORY': 'Invalid Book Category',
         'INVALID_LANGUAGE': 'Invalid Book Language',
