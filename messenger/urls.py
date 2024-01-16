@@ -4,9 +4,13 @@ from messenger.views import *
 urlpatterns = [
     
   path("signUp/", signUp, name="signUp"),
+  path("signIn/", signIn, name="signIn"),
   path("simpleChat/", simpleChat, name="simpleChat"),
+  path("rooms/", rooms, name="rooms"),
 
-  path("CreateOrGetUser/", CreateOrGetUser.as_view(), name="CreateOrGetUser"),
+  path("CreateUser/", CreateUser.as_view(), name="CreateUser"),
+  path("SignInUser/", SignInUser.as_view(), name="SignInUser"),
+  path("UserLogout/", UserLogout.as_view(), name="UserLogout"),
   path("LoadChatData/", LoadChatData.as_view(), name="LoadChatData"),
 
   path("FlushRedisData/", FlushRedisData.as_view(), name="FlushRedisData"),
