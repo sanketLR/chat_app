@@ -11,8 +11,8 @@ def get_response(code_status, payload, msg):
     return Response(
         {
             'code': code_status,
+            'data': payload,
             'message': msg,
-            'data': payload
         }
     )
 

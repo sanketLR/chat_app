@@ -17,7 +17,7 @@ from django.contrib.auth import (
 )
 from django.contrib.auth import authenticate, login, logout
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 
 
 def signUp(request):
@@ -35,6 +35,7 @@ def simpleChat(request):
 def rooms(request):
     return render(request, "rooms.html")
 
+
 class CreateUser(APIView):    
 
     permission_classes = [AllowAny]
@@ -47,14 +48,20 @@ class CreateUser(APIView):
 
             if serializer.is_valid():
 
+                password = request.data.get('password')
+                
                 user = serializer.save()
+
+                user.password = make_password(password)
+
+                user.save()
 
                 if not user.is_active:
 
                     return get_response(status.HTTP_400_BAD_REQUEST, get_status_msg('USER_NOT_ACTIVE'), get_status_msg('ERROR_400'))
                     
                 refresh, access = get_tokens_for_user(user) 
-                # login(request, user)
+                
                 res = serializer.data
 
                 res["refresh"] = refresh
@@ -129,6 +136,7 @@ class UserLogout(APIView):
 
 class LoadChatData(APIView):
 
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
