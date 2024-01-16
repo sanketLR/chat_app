@@ -1,0 +1,58 @@
+<nav class="bg-gray-800 p-4">
+    <div class="flex justify-between items-center">
+        <div class="text-2xl font-bold">TalkNow</div>
+        <div class="flex space-x-4">
+            <a href="{% url "signIn" %}" id="SignInLink"  class="hover:text-gray-300">Sign In</a>
+            <a href="{% url "signUp" %}" id="SignUpLink"  class="hover:text-gray-300">Sign Up</a>
+            <a href="{% url "UserLogout" %}"  id="SignOutLink" class="hover:text-gray-300">Sign Out</a>
+        </div>
+    </div>
+</nav>
+<script>
+    async function logoutUser(e) {
+        e.preventDefault();
+    
+        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+    
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
+    
+        const tokenDict = {
+            "refresh": refreshToken
+        };
+    
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/messenger/UserLogout/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(tokenDict), 
+            });
+    
+            const data = await response.json();
+    
+            console.log(data);
+    
+            if (data.code === 200) {
+
+                localStorage.removeItem("refreshToken")
+                localStorage.removeItem("accessToken")
+
+                window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
+            }
+    
+            if (data.code === 400) {
+                console.log("Logout failed");
+            }
+    
+        } catch (error) {
+            console.error('Error:', error.message);
+        }
+    }
+    
+    document.getElementById("SignOutLink").addEventListener("click", logoutUser);
+</script>
+
