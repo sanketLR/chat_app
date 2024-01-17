@@ -47,8 +47,9 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
         Receive data from the client side
         Broadcast the message into all channels through the related group
+        
 
-        text_data - string 
+        text_data - string (need to convert into dict)
                   - Contains data dict as string formated
 
         ➡ text_data : {"msg":"ewr","user":"admin"}
@@ -58,13 +59,21 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             - Custom handler to perform some task
 
         '''
-        
+        client_msg = json.loads(text_data) 
+
+        message = client_msg["msg"]
+        username = client_msg["user"]
+        now_time = str(datetime.datetime.now())
+
+        if message:
+            await self.save_chat_message(message, username, now_time)
+
         await self.channel_layer.group_send(
             "python_chat",
             {
                 "type" : "user_chat",
-                "message" : text_data,
-                
+                "message" : client_msg,
+                "now_time" : now_time
             }
         )
 
@@ -76,15 +85,14 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         - Send that message back to client
         '''
             
-        client_msg = json.loads(event["message"]) 
+        client_msg = event["message"] 
 
         message = client_msg["msg"]
         username = client_msg["user"]
         now_time = str(datetime.datetime.now())
+        
         if message !=  "":
             
-            await self.save_chat_message(message, username, now_time)
-
             await self.send(text_data=json.dumps({
                 "message" : message,
                 "username" : username,
@@ -93,7 +101,6 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def save_chat_message(self, message, username, now_time):
-
         get_user = User.objects.filter(username = username).first()
         get_room = Chat_Room.objects.filter(cr_name = "python_group").first()
 
@@ -126,21 +133,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        
-    async def disconnect(self, event):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-        raise StopConsumer()
-
 
     async def receive(self,text_data):
-        print("berfor text data= ", type(text_data))
-        print("berfor text data= ", text_data)
 
         data = json.loads(text_data)
-        print("after text data",type(data))
         message = data['message']
         username = data['username']
         now_time = data['now_time']
@@ -161,11 +157,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
             
     async def chat_message(self, event):
+        
         message = event['message']
         username = event['username']
         now_time = event['now_time']
         room = event['room']
-        print("EVENT",event)
+
         if message != '':
             await self.send(text_data=json.dumps({
                 'message':message,
@@ -190,3 +187,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             room = Chat_Room.objects.get(cr_name = room)
             if message != '':
                 Message.objects.create(user= user,room =room, content = message,date_added =now_time)
+
+        
+    async def disconnect(self, event):
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+        raise StopConsumer()
+    
