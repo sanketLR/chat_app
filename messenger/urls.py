@@ -5,7 +5,7 @@ urlpatterns = [
     
   path("signUp/", signUp, name="signUp"),
   path("signIn/", signIn, name="signIn"),
-  path("simpleChat/", simpleChat, name="simpleChat"),
+  path("simpleChat/<str:name>/", simpleChat, name="simpleChat"),
   path("rooms/", rooms, name="rooms"),
 
   path("CreateUser/", CreateUser.as_view(), name="CreateUser"),

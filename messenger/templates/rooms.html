@@ -104,17 +104,22 @@
                         for (let i = 0; i < data.data.length; i++) {
                             const roomName = data.data[i].cr_name;
                             const roomDisc = data.data[i].cr_discription;
-
+                
                             const description = roomDisc;
-                    
+                
                             // Create a new card element
                             const card = $("<div class='card text-black'>");
-
+                
                             // Add content to the card
                             card.append("<h2 class='text-xl font-semibold mb-2'>" + roomName + "</h2>");
                             card.append("<p>" + description + "</p></br>");
-                            card.append("<a href='' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
+                
+                            // Create a link with the cr_name in the href attribute
+                            const joinLink = $("<a href='/api/messenger/simpleChat/" + roomName +"' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
+                            //const joinLink = $("<a href='/api/messenger/" + "simpleChat/" + "' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
 
+                            card.append(joinLink);
+                
                             // Append the card to the card container
                             cardContainer.append(card);
                         }

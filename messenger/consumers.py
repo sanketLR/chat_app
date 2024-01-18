@@ -2,41 +2,26 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer, AsyncConsumer
 from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
-from . models import Message,Chat_Room
+from messenger.models import Message,Chat_Room
 from django.contrib.auth.models import User
-from . models import *
 import datetime
-from typing import Dict, Any, Union
-from typing import Union
-
-class MySyncConsumer(AsyncConsumer):
-
-    async def websocket_connect(self, event):
-        print("Websocket connected", event)
-        await self.send({
-            "type" : "websocket.accept"
-        })
-
-    async def websocket_receive(self, event):
-        print("Message received from client", event)
-        print(event['text'])
-        await self.send({
-            "type" : "websocket.send",
-            "text" : "Message sent to the client"
-        })
-    
-    async def websocket_disconnect(self, event):
-        print("Websocket disconnected", event)
-        raise StopConsumer()
 
 
 class SimpleChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-        '''Creaet a group and add channel into that group'''
+        '''
+        Creaet a group and add channel into that group
+
+        Fetch group name from the scop.
+        '''
+
+        self.room_name = self.scope['url_route']['kwargs']['name']
+
+        self.room_group_name = self.room_name
 
         await self.channel_layer.group_add(
-            "python_chat",
+            self.room_group_name,
             self.channel_name
         )
 
@@ -44,7 +29,6 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         
     async def receive(self, text_data):
         '''
-
         Receive data from the client side
         Broadcast the message into all channels through the related group
         
@@ -59,21 +43,24 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             - Custom handler to perform some task
 
         '''
+
         client_msg = json.loads(text_data) 
 
         message = client_msg["msg"]
         username = client_msg["user"]
-        now_time = str(datetime.datetime.now())
+        room = client_msg["room"]
+        now_time = datetime.datetime.now()
+        formatted_time = now_time.strftime("%d-%m-%Y %H:%M:%S")
 
         if message:
-            await self.save_chat_message(message, username, now_time)
+            await self.save_chat_message(message, username, formatted_time, room)
 
         await self.channel_layer.group_send(
-            "python_chat",
+            self.room_group_name,
             {
                 "type" : "user_chat",
                 "message" : client_msg,
-                "now_time" : now_time
+                "now_time" : formatted_time
             }
         )
 
@@ -84,25 +71,30 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         - Save chat message
         - Send that message back to client
         '''
-            
+
+        client_msg_time = event["now_time"]
+
         client_msg = event["message"] 
 
         message = client_msg["msg"]
         username = client_msg["user"]
-        now_time = str(datetime.datetime.now())
-        
+        room = client_msg["room"]
+
+        time = client_msg_time
+
         if message !=  "":
             
             await self.send(text_data=json.dumps({
                 "message" : message,
                 "username" : username,
-                "now_time" : now_time
+                "now_time" : time,
+                "room" : room
             }))
 
     @sync_to_async
-    def save_chat_message(self, message, username, now_time):
+    def save_chat_message(self, message, username, now_time, room):
         get_user = User.objects.filter(username = username).first()
-        get_room = Chat_Room.objects.filter(cr_name = "python_group").first()
+        get_room = Chat_Room.objects.filter(cr_name = room).first()
 
         if get_user is not None:
             Message.objects.create(
@@ -114,7 +106,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self,event):
         self.channel_layer.group_discard(
-            "python_group",
+            self.room_group_name,
             self.channel_name
         )
         raise StopConsumer()

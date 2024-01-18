@@ -32,21 +32,6 @@
 
     <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl ">
         <div class="chat-messages space-y-3" id="chat-messages">
-            <!-- {% if messages %}
-                {% for message in messages %}
-                    <div class="p-4 t bg-gray-200 rounded-xl   ">
-                    
-                        <small><p class="font-bold text-right  opacity-50">{{message.date_added}}</p></small>
-                        <p class="font-bold">{{message.user.admin.username}}</p>
-                        
-                        <p class="font-bold ">{{message.user2.admin.username}}</p>
-                        
-                        <p>{{message.content}}</p>
-                    </div>
-                {% endfor %}
-            {% else %}
-             <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">No Message Avaliabe</h1>
-            {% endif %} -->
             
         </div>
     </div>
@@ -60,34 +45,42 @@
 </body>
 
 {% block script %}
+
 {{request.user.username | json_script:"json-username"}}
+{{room_name | json_script:"json-room_name"}}
+
 <script>
 
 document.getElementById('preloader').style.display = 'flex';
-
+    
 document.addEventListener('DOMContentLoaded', async function () {
-
+    
     await loadChatData();
+
 });
 
 async function loadChatData() {
     try {
-        // Make an AJAX request to fetch chat data from the API
-        const accessToken = localStorage.getItem("accessToken");
 
-        // Make an AJAX request to fetch chat data from the API with authorization header
+
+        const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
+        console.log(roomName," roomName")
+
+        const accessToken = localStorage.getItem("accessToken");
+        
         const response = await fetch('http://127.0.0.1:8000/api/messenger/LoadChatData/', {
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${accessToken}`
-            }
+            },
+            body : JSON.stringify(roomName)
         });
         
         const data = await response.json();
 
         if (data.status === 200) {
-            // Loop through the result array and append messages to the chat box
+
             data.result.forEach(message => {
                 let html = '<div class="p-4 bg-gray-200 rounded-xl">';
                 html += '<small><p class="font-bold text-right opacity-50">' + message.date_added + '</p></small>';
@@ -97,7 +90,6 @@ async function loadChatData() {
                 document.querySelector('#chat-messages').innerHTML += html;
             });
 
-            // Scroll to the bottom after loading messages
             scrollToBottom();
         } else {
             console.error('Failed to fetch chat data.');
@@ -105,34 +97,35 @@ async function loadChatData() {
     } catch (error) {
         console.error('Error fetching chat data:', error);
     } finally {
-        // Hide the preloader when the data is loaded
         document.getElementById('preloader').style.display = 'none';
     }
 }
 
-function scrollToBottom() {
-    const objDiv = document.querySelector('#chat-messages');
-    objDiv.scrollTop = objDiv.scrollHeight;
-}
+    const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
 
-    var ws = new WebSocket('ws://127.0.0.1:8000/ws/grouptchat/python_chat/')
-    
+    const ws = new WebSocket(
+        'ws://'
+        + window.location.host
+        +'/ws/grouptchat/'
+        + roomName
+        +'/'
+    )
+
     const username = JSON.parse(document.getElementById("json-username").textContent)
-    // Wait for the document to be ready
+
     document.addEventListener('DOMContentLoaded', function() {
-        // using Method 
+
         ws.onopen = function (){
+            
             console.log("WebSocket Connection open...")
            
         }
 
         ws.onmessage = function(e){
 
-            e.preventDefault();
+            e.preventDefault(); 
 
             const data = JSON.parse(e.data)
-            console.log("Outerdata --> ",data);
-
 
             if(data.message){
                 let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
@@ -147,7 +140,6 @@ function scrollToBottom() {
             else{
                 alert('Msg was empty');
             }
-            // Handle incoming messages if needed
         }
 
         ws.onerror = function(event){
@@ -164,26 +156,30 @@ function scrollToBottom() {
         }
 
         scrollToBottom();
-        // Get the form element
+
         var chatForm = document.querySelector('form.flex');
 
-        // Attach an event listener to the form's submit event
         chatForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent the default form submission behavior
 
-            // Get the input text from the textarea
+            e.preventDefault(); 
+
             var getInputText = document.getElementById("chat-message-input").value;
 
-            // Send the message to the server
             ws.send(JSON.stringify({
                 "msg": getInputText,
-                "user": username
+                "user": username,
+                "room" : roomName,
             }));
 
-            // Clear the input field if needed
             document.getElementById("chat-message-input").value = "";
         });
     });
+
+function scrollToBottom() {
+    const objDiv = document.querySelector('#chat-messages');
+    objDiv.scrollTop = objDiv.scrollHeight;
+}
+    
 </script>
 {% endblock script %}
 </html>

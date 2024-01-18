@@ -28,12 +28,17 @@ def signIn(request):
     return render(request, "signin.html")
 
 
-def simpleChat(request):
-    return render(request, "simplechat.html")
-
-
 def rooms(request):
     return render(request, "rooms.html")
+
+
+def simpleChat(request, name):
+    name = Chat_Room.objects.filter(cr_name = name).first()
+    context = {
+        "room_name" : name.cr_name
+    }
+    return render(request, "simplechat.html", context)
+
 
 
 class CreateUser(APIView):    
@@ -109,6 +114,7 @@ class SignInUser(APIView):
                 return get_response(status.HTTP_200_OK, Token , get_status_msg('LOGGED_IN'))
 
         else:
+            
             return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('NOT_LOGGED_IN'))
 
      
@@ -157,9 +163,9 @@ class LoadChatData(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
 
-        room_name = "python_group"
+        room_name = request.data
 
         chat_room = Chat_Room.objects.filter(cr_name=room_name).first().rooms.all()
 

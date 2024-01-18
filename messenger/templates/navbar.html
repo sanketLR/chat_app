@@ -2,12 +2,14 @@
     <div class="flex justify-between items-center">
         <div class="text-2xl font-bold">TalkNow</div>
         <div class="flex space-x-4">
+            <a href="{% url "rooms" %}" id="RoomsLink"  class="hover:text-gray-300">Rooms</a>
             <a href="{% url "signIn" %}" id="SignInLink"  class="hover:text-gray-300">Sign In</a>
             <a href="{% url "signUp" %}" id="SignUpLink"  class="hover:text-gray-300">Sign Up</a>
             <a href="{% url "UserLogout" %}"  id="SignOutLink" class="hover:text-gray-300">Sign Out</a>
         </div>
     </div>
 </nav>
+
 <script>
     async function logoutUser(e) {
         e.preventDefault();

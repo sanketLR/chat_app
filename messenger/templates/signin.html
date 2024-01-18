@@ -111,7 +111,9 @@
         document.addEventListener('DOMContentLoaded', function(e){
             e.preventDefault()
             let getSignOutLink = document.getElementById("SignOutLink")
-            getSignOutLink.style.display = "none";
+            let getRoomsLink = document.getElementById("RoomsLink")
+            getSignOutLink.remove();
+            getRoomsLink.remove();
         })
     </script>
 
