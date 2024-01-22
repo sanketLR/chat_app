@@ -1,16 +1,11 @@
-<!DOCTYPE html>
-{% load static %}
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <link rel="shortcut icon" href="{% static '/img/logomy.png' %}">
-        <title>
+{% extends "base.html" %}
+{% block content %}
 
-        </title>
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
+    {% block nav %}
+    
+        {% include "navbar.html" %}
+        
+    {% endblock nav %}
     <style>
 
         .chat-messages{
@@ -21,28 +16,28 @@
         display: none;
     }
     </style>
-<body class="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900">
-    <div id="preloader" class="fixed top-0 left-0 w-screen h-screen flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
-        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-blue-500"></div>
-    </div>
-    <div class="p-10 lg:p-10 text-center">
-        <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">{{room.cr_name}}</h1>
-        <h5 class=" text-white">{{request.user.username}}</h5>
-    </div>
-
-    <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl ">
-        <div class="chat-messages space-y-3" id="chat-messages">
-            
+    <body class="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900">
+        <div id="preloader" class="fixed top-0 left-0 w-screen h-screen flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
+            <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-blue-500"></div>
         </div>
-    </div>
-    <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
-        <form action="." method="POST" class="flex">
-            {% csrf_token %}
-            <input type="text" name="content" class="flex-1 mr-3" placeholder="Your message..." id="chat-message-input">
-            <button class="px-5 py-3 rounded-xl text-white  bg-gray-800 hover:bg-gray-700" id="chat-message-submit">Send</button>
-        </form>
-    </div><br>
-</body>
+        <div class="p-10 lg:p-10 text-center">
+            <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">{{room.cr_name}}</h1>
+            <h5 class=" text-white">{{request.user.username}}</h5>
+        </div>
+
+        <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl ">
+            <div class="chat-messages space-y-3" id="chat-messages">
+                
+            </div>
+        </div>
+        <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
+            <form action="." method="POST" class="flex">
+                {% csrf_token %}
+                <input type="text" name="content" class="flex-1 mr-3" placeholder="Your message..." id="chat-message-input">
+                <button class="px-5 py-3 rounded-xl text-white  bg-gray-800 hover:bg-gray-700 text-black" id="chat-message-submit">Send</button>
+            </form>
+        </div><br>
+    </body>
 
 {% block script %}
 
@@ -83,9 +78,9 @@ async function loadChatData() {
 
             data.result.forEach(message => {
                 let html = '<div class="p-4 bg-gray-200 rounded-xl">';
-                html += '<small><p class="font-bold text-right opacity-50">' + message.date_added + '</p></small>';
-                html += '<p class="font-bold">' + message.user + '</p>';
-                html += '<p>' + message.content + '</p></div>';
+                html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
+                html += '<p class="font-bold text-black">' + message.user + '</p>';
+                html += '<p class="text-black">' + message.content + '</p></div>';
 
                 document.querySelector('#chat-messages').innerHTML += html;
             });
@@ -129,10 +124,10 @@ async function loadChatData() {
 
             if(data.message){
                 let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
-                    html += '<small><p class="font-bold text-right opacity-50"">' + data.now_time + '</p></small>';
-                    html += '<p class="font-bold">' + data.username + '</p>';
+                    html += '<small><p class="font-bold text-right text-black opacity-50"">' + data.now_time + '</p></small>';
+                    html += '<p class="font-bold text-black">' + data.username + '</p>';
                     
-                    html += '<p>'+ data.message + '</p></div>';
+                    html += '<p class="text-black">'+ data.message + '</p></div>';
                 
                 document.querySelector('#chat-messages').innerHTML += html;
                 scrollToBottom();
@@ -182,4 +177,4 @@ function scrollToBottom() {
     
 </script>
 {% endblock script %}
-</html>
+{% endblock content %}

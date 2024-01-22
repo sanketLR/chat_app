@@ -1,81 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-{% load static %}
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Chat App</title>
-
-    <script src="{% static "js/check_token.js" %}"></script>
-
-
-    <!-- Include Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
-    <!-- Include a classic font -->
-    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond&display=swap" rel="stylesheet">
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            padding: 20px;
-        }
-
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .card {
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 16px;
-            width: 300px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Center content horizontally */
-            justify-content: space-between;
-        }
-    </style>
-
-</head>
-
-<body class="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 text-white font-serif">
+{% extends "base.html" %}
+{% block content %}
 
     {% block nav %}
     
         {% include "navbar.html" %}
         
     {% endblock nav %}
+    
+<style> 
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        margin: 0;
+    }
 
+    main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .card {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 16px;
+        width: 300px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center content horizontally */
+        justify-content: space-between;
+    }
+</style>
+
+</head>
     
     <main>
         <div class="mb-4">
             <input type="text" placeholder="Search..." class="p-2 rounded-md border border-gray-400">
         </div>
 
-        <!-- List of Cards -->
         <div class="card-container">
 
         </div>
     </main>
-
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
     <script>
         $(document).ready(function () {
@@ -150,8 +130,5 @@
 
         })
     </script>
+    {% endblock content %}
 
-
-</body>
-
-</html>
