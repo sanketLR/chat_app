@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
+import os
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -44,7 +45,7 @@ class MessageSerializer(serializers.ModelSerializer):
     
     def get_content(self, obj):
             
-        password = "secret_password"
+        password = os.getenv("MESSAGE_PASSWORD")
 
         key = self.derive_key(password)
 
@@ -55,7 +56,7 @@ class MessageSerializer(serializers.ModelSerializer):
         ciphertext = data[16:]
 
         cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
-        
+
         decryptor = cipher.decryptor()
 
         decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
@@ -73,3 +74,16 @@ class ChatRoomSerializer(serializers.ModelSerializer):
             "cr_name",
             "cr_discription"
         ]
+
+    def validate(self, data):
+        cr_name = data.get('cr_name')
+        cr_discription = data.get('cr_discription')
+
+        if not cr_name:
+            raise serializers.ValidationError("Room name cannot be empty.")
+
+        if not cr_discription:
+            raise serializers.ValidationError("Room description cannot be empty.")
+
+        return data
+    

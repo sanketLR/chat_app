@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        margin: 0;
+    }
+</style>
     {% block nav %}
     
         {% include "navbar.html" %}
         
     {% endblock nav %}
-
     <main>
         <div class="bg-gray-800 p-8 rounded-md shadow-md max-w-md">
             <h2 class="text-3xl font-semibold mb-6">User Sign In</h2>

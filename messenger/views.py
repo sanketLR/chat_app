@@ -33,10 +33,20 @@ def rooms(request):
 
 
 def simpleChat(request, name):
+    
     name = Chat_Room.objects.filter(cr_name = name).first()
+    
+    if name == None:
+        context = {
+            "room_name" : ""
+        }
+
+        return render(request, "simplechat.html", context)
+    
     context = {
         "room_name" : name.cr_name
     }
+
     return render(request, "simplechat.html", context)
 
 
@@ -139,6 +149,25 @@ class UserLogout(APIView):
 
             return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('INVALID_TOKEN'))
         
+class RoomsCreate(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        data = request.data
+        print("➡ data :", data)
+
+        serializer = ChatRoomSerializer(data = data)
+
+        if serializer.is_valid():
+
+            serializer.save()
+            
+            return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('CREATED'))
+        
+        return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('ERROR_400'))
 
 class RoomsList(APIView):
 

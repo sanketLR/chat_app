@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 
     {% block nav %}
@@ -7,47 +8,53 @@
         
     {% endblock nav %}
     
-<style> 
-    body {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        margin: 0;
-    }
+    <script src="{% static "js/check_token.js" %}"></script>
+ 
+    <style>
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+        }
 
-    main {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        padding: 20px;
-    }
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
 
-    .card-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+        .card {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px;
+            width: 300px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center content horizontally */
+            justify-content: space-between;
+        }
 
-    .card {
-        background-color: #fff;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        padding: 16px;
-        margin: 16px;
-        width: 300px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Center content horizontally */
-        justify-content: space-between;
-    }
-</style>
+        /* Updated button styles to move it to the right side */
+        button{
+            position: absolute;
+            top: 85px;
+            right: 20px;
+        }
+
+    </style>
 
 </head>
+
+  {% include "create_room.html" %}
     
     <main>
+
         <div class="mb-4">
             <input type="text" placeholder="Search..." class="p-2 rounded-md border border-gray-400">
         </div>
@@ -55,6 +62,7 @@
         <div class="card-container">
 
         </div>
+
     </main>
 
     <script>
@@ -87,26 +95,27 @@
                 
                             const description = roomDisc;
                 
-                            // Create a new card element
                             const card = $("<div class='card text-black'>");
                 
-                            // Add content to the card
                             card.append("<h2 class='text-xl font-semibold mb-2'>" + roomName + "</h2>");
                             card.append("<p>" + description + "</p></br>");
                 
-                            // Create a link with the cr_name in the href attribute
                             const joinLink = $("<a href='/api/messenger/simpleChat/" + roomName +"' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
-                            //const joinLink = $("<a href='/api/messenger/" + "simpleChat/" + "' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
 
                             card.append(joinLink);
                 
-                            // Append the card to the card container
                             cardContainer.append(card);
                         }
+                    }else{
+
+                        window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
+
                     }
 
                     if (data.code === 400) {
+
                         console.log("400 come");
+
                     }
                 },
                 error: function (error) {
