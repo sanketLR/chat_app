@@ -51,12 +51,12 @@
 
 </head>
 
-  {% include "create_room.html" %}
+    {% include "create_room.html" %}
     
     <main>
 
-        <div class="mb-4">
-            <input type="text" placeholder="Search..." class="p-2 rounded-md border border-gray-400">
+        <div class="mb-2">
+            <input type="text" id="searchInput" placeholder="Search..." class="p-2 rounded-md border border-gray-400 text-black">
         </div>
 
         <div class="card-container">
@@ -65,79 +65,147 @@
 
     </main>
 
-    <script>
-        $(document).ready(function () {
+<script>
 
-            const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+    $(document).ready(function () {
+        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
 
-            const accessToken = localStorage.getItem("accessToken");
-            const refreshToken = localStorage.getItem("refreshToken");
+        $.ajax({
+            url: 'http://127.0.0.1:8000/api/messenger/RoomsList/',
+            type: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data.code === 200) {
+                    // Store the original data for filtering later
+                    const originalData = data.data.data;
     
-            $.ajax({
-                url: 'http://127.0.0.1:8000/api/messenger/RoomsList/',
-                type: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
-
-                dataType: 'json',
-                
-                success: function (data) {
-
-                    if (data.code === 200) {
-
-                        const cardContainer = $(".card-container");
-
-                        for (let i = 0; i < data.data.length; i++) {
-                            const roomName = data.data[i].cr_name;
-                            const roomDisc = data.data[i].cr_discription;
-                
-                            const description = roomDisc;
-                
-                            const card = $("<div class='card text-black'>");
-                
-                            card.append("<h2 class='text-xl font-semibold mb-2'>" + roomName + "</h2>");
-                            card.append("<p>" + description + "</p></br>");
-                
-                            const joinLink = $("<a href='/api/messenger/simpleChat/" + roomName +"' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
-
-                            card.append(joinLink);
-                
-                            cardContainer.append(card);
-                        }
-                    }else{
-
-                        window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
-
+                    // Populate cards with original data
+                    populateCards(originalData);
+    
+                    // Attach event listener on search input
+                    $("#searchInput").on("input", function () {
+                        const searchTerm = $(this).val().toLowerCase();
+                        const filteredData = originalData.filter(function (item) {
+                            return item.cr_name.toLowerCase().includes(searchTerm);
+                        });
+                        // Update the card container with filtered data
+                        populateCards(filteredData);
+                    });
+    
+                    // Check if the user is a superuser
+                    if (data.data.superuser === true) {
+                        // Create and append the button only if the user is a superuser
+                        createRoomModalButton();
                     }
-
-                    if (data.code === 400) {
-
-                        console.log("400 come");
-
-                    }
-                },
-                error: function (error) {
-                    console.error('Error:', error.message);
+                } else {
+                    window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
                 }
-            });
+    
+                if (data.code === 400) {
+                    console.log("400 come");
+                }
+            },
+            error: function (error) {
+                console.error('Error:', error.message);
+            }
         });
-    </script>
     
+
+        // Function to populate cards based on data
+        function populateCards(data) {
+            const cardContainer = $(".card-container");
+            cardContainer.empty();
+
+            for (let i = 0; i < data.length; i++) {
+                const roomName = data[i].cr_name;
+                const roomDisc = data[i].cr_discription;
+
+                const description = roomDisc;
+
+                const card = $("<div class='card text-black'>");
+
+                card.append("<h2 class='text-xl font-semibold mb-2'>" + roomName + "</h2>");
+                card.append("<p>" + description + "</p></br>");
+
+                const joinLink = $("<a href='/api/messenger/simpleChat/" + roomName + "' class='bg-blue-500 text-white px-4 py-2 rounded-md'>Join</a>");
+
+                card.append(joinLink);
+
+                cardContainer.append(card);
+            }
+        }
+
+            // Function to show the modal and overlay
+        function showModal() {
+            var modal = document.getElementById('authentication-modal');
+            var overlay = document.getElementById('overlay');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex'); // Add 'flex' class to center the modal
+            overlay.classList.remove('hidden');
+        }
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function(e){
+        // Function to hide the modal and overlay
+        function hideModal() {
+            var modal = document.getElementById('authentication-modal');
+            var overlay = document.getElementById('overlay');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex'); // Remove 'flex' class
+            overlay.classList.add('hidden');
+        }
+    
+        // Add event listener to the toggle button
+        // Check if the element exists before trying to add the event listener
+        const toggleElement = document.querySelector('[data-modal-toggle="authentication-modal"]');
+        if (toggleElement) {
+            toggleElement.addEventListener('click', function () {
+                showModal();
+            });
+        } else {
+            console.error("Element not found: [data-modal-toggle='authentication-modal']");
+        }
 
-            e.preventDefault()
+        // Add event listener to the close button inside the modal
+        document.querySelector('[data-modal-hide="authentication-modal"]').addEventListener('click', function () {
+            hideModal();
+        });
+    
+        // Close modal when clicking outside the modal content
+        document.getElementById('authentication-modal').addEventListener('click', function (event) {
+            if (event.target === this) {
+                hideModal();
+            }
+        });
 
-            let getSignUpLink = document.getElementById("SignUpLink")
-            let getSignInLink = document.getElementById("SignInLink")
-            
-            getSignUpLink.remove()
-            getSignInLink.remove()
+        function createRoomModalButton() {
+            const buttonElement = $("<button id='createRoomModalButton' data-modal-target='authentication-modal' data-modal-toggle='authentication-modal' class='block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg text-sm px-5 py-2.5 text-center text-l' type='button'>+</button>");
+            $("body").append(buttonElement);
+            buttonElement.on("click", function () {
+                showModal(); // Assuming showModal is a function that shows the modal
+            });
+        }
+    });
+</script>
+    
+<script>
 
-        })
-    </script>
-    {% endblock content %}
+    document.addEventListener('DOMContentLoaded', function(e){
 
+        e.preventDefault()
+
+        let getSignUpLink = document.getElementById("SignUpLink")
+        let getSignInLink = document.getElementById("SignInLink")
+        
+        getSignUpLink.remove()
+        getSignInLink.remove()
+
+    })
+    
+</script>
+
+{% endblock content %}

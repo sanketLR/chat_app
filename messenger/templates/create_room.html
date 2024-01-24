@@ -1,7 +1,4 @@
 <div id="overlay" class="hidden fixed inset-0 bg-gray-800 bg-opacity-70 z-40"></div>
-<button data-modal-target="authentication-modal" data-modal-toggle="authentication-modal" class="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 text-6xl rounded-lg text-sm px-5 py-2.5 text-center text-6xl" type="button">
-    +
-</button>
 
 <!-- Main modal -->
 <div id="authentication-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
@@ -16,7 +13,7 @@
                 <button type="button" class="">
                    
                 </button>
-                <span type="button" class="px-3 py-2 text-xs font-medium text-center inline-flex items-center bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" data-modal-hide="authentication-modal">
+                <span type="button" id="hideModal" class="px-3 py-2 text-xs font-small text-center inline-flex items-center bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" data-modal-hide="authentication-modal">
                     ⨯
                 </span>
             </div>
@@ -27,10 +24,11 @@
                     <div>
                         <label for="room_name" class="block mb-2 text-xl font-medium text-white">Name :</label>
                         <input type="text" name="room_name" id="room_name" class="bg-gray-50 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-whiten text-center" placeholder="Room Name" required>
+                        <span id="room_name_error" class="text-red-500 hidden">Required</span>
                         <br>
-                        <label for="room_discription" class="block mb-2 text-xl font-medium text-white">Discription :</label>
-                        <input type="text" name="room_discription" id="room_discription" class="bg-gray-50 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-whiten text-center" placeholder="Room Discription" required>
-
+                        <label for="room_discription" class="block mb-2 text-xl font-medium text-white">Description :</label>
+                        <input type="text" name="room_discription" id="room_discription" class="bg-gray-50 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-whiten text-center" placeholder="Room Description" required>
+                        <span id="room_discription_error" class="text-red-500 hidden">Required</span>
                     </div>
                 
                     <span type="button" id="createRooms" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
@@ -46,91 +44,66 @@
     </div>
 </div>
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Function to show the modal and overlay
-        function showModal() {
-            var modal = document.getElementById('authentication-modal');
-            var overlay = document.getElementById('overlay');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex'); // Add 'flex' class to center the modal
-            overlay.classList.remove('hidden');
-        }
-    
-        // Function to hide the modal and overlay
-        function hideModal() {
-            var modal = document.getElementById('authentication-modal');
-            var overlay = document.getElementById('overlay');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex'); // Remove 'flex' class
-            overlay.classList.add('hidden');
-        }
-    
-        // Add event listener to the toggle button
-        document.querySelector('[data-modal-toggle="authentication-modal"]').addEventListener('click', function () {
-            showModal();
-        });
-    
-        // Add event listener to the close button inside the modal
-        document.querySelector('[data-modal-hide="authentication-modal"]').addEventListener('click', function () {
-            hideModal();
-        });
-    
-        // Close modal when clicking outside the modal content
-        document.getElementById('authentication-modal').addEventListener('click', function (event) {
-            if (event.target === this) {
-                hideModal();
-            }
-        });
-    });
-</script>
-
 <script>
 
-async function createRoomFunc() {
-
-    let userName = document.getElementById("room_name").value
-    let password = document.getElementById("room_discription").value
-
-    const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
-
-    const accessToken = localStorage.getItem("accessToken");
-    const refreshToken = localStorage.getItem("refreshToken");
-
-    let Jsondata = {
-        "cr_name" : userName,
-        "cr_discription" : password
-    }
-    try {
-        $.ajax({
-            url: 'http://127.0.0.1:8000/api/messenger/RoomsCreate/',
-            type: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            },
-            data: JSON.stringify(Jsondata),
-            dataType: 'json',
-            success: function (data) {
-                if (data.code === 200) {
-                    window.location.reload();
+    async function createRoomFunc() {
+    
+        let userName = document.getElementById("room_name").value
+        let password = document.getElementById("room_discription").value
+    
+        if (!userName) {
+            document.getElementById("room_name_error").classList.remove("hidden");
+            return; // Stop execution if the name is empty
+        } else {
+            document.getElementById("room_name_error").classList.add("hidden");
+        }
+    
+        if (!password) {
+            document.getElementById("room_discription_error").classList.remove("hidden");
+            return; // Stop execution if the description is empty
+        } else {
+            document.getElementById("room_discription_error").classList.add("hidden");
+        }
+    
+        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+    
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
+    
+        let Jsondata = {
+            "cr_name" : userName,
+            "cr_discription" : password
+        }
+        try {
+            $.ajax({
+                url: 'http://127.0.0.1:8000/api/messenger/RoomsCreate/',
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                data: JSON.stringify(Jsondata),
+                dataType: 'json',
+                success: function (data) {
+                    if (data.code === 200) {
+                        window.location.reload();
+                    }
+    
+                    if (data.code === 400) {
+                        console.log("data", data);
+                        console.log("400 come");
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error.statusText);
                 }
-
-                if (data.code === 400) {
-                    console.log("data", data);
-                    console.log("400 come");
-                }
-            },
-            error: function (error) {
-                console.error('Error:', error.statusText);
-            }
-        });
-    } catch (error) {
-        console.error('Error:', error.message);
+            });
+        } catch (error) {
+            console.error('Error:', error.message);
+        }
     }
-}
     document.getElementById("createRooms").addEventListener("click", createRoomFunc);
-
+    
 </script>
+    

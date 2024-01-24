@@ -39,6 +39,7 @@ def get_status_msg(key):
         'RETRIEVE':"Data retrieve",
         'ERROR_400': "Bad request",
         'LOGGED_IN': 'Logged in successFully',
+        'NOT_ACCESS': 'You can not access this functionality',
         'USER_PASS_REQ': "username and password required",
         'NOT_LOGGED_IN': "username or password not matched",
         'LOGGED_OUT': "user logged out",

@@ -148,7 +148,18 @@ class UserLogout(APIView):
         except:
 
             return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('INVALID_TOKEN'))
-        
+
+
+class CheckToken(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+
+        return get_response(status.HTTP_200_OK, {}, get_status_msg('CREATED'))
+
+
 class RoomsCreate(APIView):
 
     authentication_classes = [JWTAuthentication]
@@ -156,8 +167,11 @@ class RoomsCreate(APIView):
 
     def post(self, request):
 
+        if request.user.is_superuser == False:
+
+            return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('NOT_ACCESS'))
+        
         data = request.data
-        print("➡ data :", data)
 
         serializer = ChatRoomSerializer(data = data)
 
@@ -167,7 +181,34 @@ class RoomsCreate(APIView):
             
             return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('CREATED'))
         
-        return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('ERROR_400'))
+        return get_response(status.HTTP_400_BAD_REQUEST, serializer.errors , get_status_msg('ERROR_400'))
+
+
+class RoomsDelete(APIView):
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self, id):
+
+        query_set = Chat_Room.objects.filter(id = id).first()
+    
+        return query_set
+    
+    def post(self, request, id):
+            
+        room_queryset = self.get_queryset(id)
+
+        serializer = ChatRoomSerializer(room_queryset)
+
+        if serializer is not None:
+
+            room_queryset.delete()
+
+            return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('DELETED'))
+    
+        return get_response(status.HTTP_404_NOT_FOUND, {} , get_status_msg('DATA_NOT_FOUND'))
+
 
 class RoomsList(APIView):
 
@@ -182,7 +223,12 @@ class RoomsList(APIView):
 
         if serializer is not None:
 
-            return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('RETRIEVE'))
+            data = {
+                "data": serializer.data,
+                "superuser" : request.user.is_superuser
+            }
+            
+            return get_response(status.HTTP_200_OK, data , get_status_msg('RETRIEVE'))
         
         return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('NO_ROOMS'))
 

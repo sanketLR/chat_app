@@ -66,6 +66,7 @@ class MessageSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         return obj.user.username
 
+
 class ChatRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -79,11 +80,10 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         cr_name = data.get('cr_name')
         cr_discription = data.get('cr_discription')
 
-        if not cr_name:
-            raise serializers.ValidationError("Room name cannot be empty.")
+        if not cr_name or not cr_name.strip():
+            raise serializers.ValidationError("Room name cannot be empty or contain only spaces.")
 
-        if not cr_discription:
+        if not cr_discription.strip():
             raise serializers.ValidationError("Room description cannot be empty.")
 
         return data
-    
