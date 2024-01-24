@@ -6,10 +6,10 @@ from asgiref.sync import async_to_sync
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction
-from . models import *
-from . serializers import *
+from messenger.models import *
+from messenger.serializers import *
 import time
-from  . utils import *
+from chat_app.utils import *
 from django.contrib.auth.models import User
 from django.contrib.auth import (
     login, 
@@ -28,12 +28,27 @@ def signIn(request):
     return render(request, "signin.html")
 
 
-def simpleChat(request):
-    return render(request, "simplechat.html")
-
-
 def rooms(request):
     return render(request, "rooms.html")
+
+
+def simpleChat(request, name):
+    
+    name = Chat_Room.objects.filter(cr_name = name).first()
+    
+    if name == None:
+        context = {
+            "room_name" : ""
+        }
+
+        return render(request, "simplechat.html", context)
+    
+    context = {
+        "room_name" : name.cr_name
+    }
+
+    return render(request, "simplechat.html", context)
+
 
 
 class CreateUser(APIView):    
@@ -109,6 +124,7 @@ class SignInUser(APIView):
                 return get_response(status.HTTP_200_OK, Token , get_status_msg('LOGGED_IN'))
 
         else:
+            
             return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('NOT_LOGGED_IN'))
 
      
@@ -133,15 +149,52 @@ class UserLogout(APIView):
 
             return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('INVALID_TOKEN'))
         
+class RoomsCreate(APIView):
 
-class LoadChatData(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        data = request.data
+        print("➡ data :", data)
+
+        serializer = ChatRoomSerializer(data = data)
+
+        if serializer.is_valid():
+
+            serializer.save()
+            
+            return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('CREATED'))
+        
+        return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('ERROR_400'))
+
+class RoomsList(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
 
-        room_name = "python_group"
+        get_room_queryset =  Chat_Room.objects.all()
+
+        serializer = ChatRoomSerializer(get_room_queryset, many = True)
+
+        if serializer is not None:
+
+            return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('RETRIEVE'))
+        
+        return get_response(status.HTTP_400_BAD_REQUEST, {} , get_status_msg('NO_ROOMS'))
+
+
+class LoadChatData(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        room_name = request.data
 
         chat_room = Chat_Room.objects.filter(cr_name=room_name).first().rooms.all()
 
