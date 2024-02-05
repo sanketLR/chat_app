@@ -201,16 +201,47 @@
         // Function to delete the room (you can implement your deletion logic here)
         function deleteRoom() {
             // Get the room ID from the input
+            
             const roomId = document.getElementById('roomIdToDelete').textContent;
+            console.log("Deleting room with ID: " + roomId);
 
             // Log the room ID (replace this with your actual deletion logic)
-            console.log("Deleting room with ID: " + roomId);
+
+            const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+            const accessToken = localStorage.getItem("accessToken");
+            const refreshToken = localStorage.getItem("refreshToken");
+
+            $.ajax({
+                url: `http://127.0.0.1:8000/api/messenger/RoomsDelete/${roomId}/`,
+                type: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.code === 200) {
+
+                        window.location.reload();
+
+                    } else {
+
+                        window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
+
+                    }
+        
+                    if (data.code === 400) {
+                        console.log("400 come");
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error.message);
+                }
+            });
 
             // Close the modal after deletion (replace this with your actual modal closing logic)
             closeDeleteModal();
         }
-
-
 
 
             // Function to show the modal and overlay

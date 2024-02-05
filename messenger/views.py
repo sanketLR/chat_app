@@ -189,15 +189,15 @@ class RoomsDelete(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self, id):
+    def get_queryset(self, name):
 
-        query_set = Chat_Room.objects.filter(id = id).first()
+        query_set = Chat_Room.objects.filter(cr_name = name).first()
     
         return query_set
     
-    def post(self, request, id):
+    def post(self, request, name):
             
-        room_queryset = self.get_queryset(id)
+        room_queryset = self.get_queryset(name)
 
         serializer = ChatRoomSerializer(room_queryset)
 

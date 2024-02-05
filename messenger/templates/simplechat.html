@@ -40,7 +40,7 @@
             <form action="." method="POST" class="flex">
                 {% csrf_token %}
                 <input type="text" name="content" class="flex-1 mr-3 text-black" placeholder="Your message..." id="chat-message-input">
-                <button class="px-5 py-3 rounded-xl text-white  bg-gray-800 hover:bg-gray-700 text-black" id="chat-message-submit">Send</button>
+                <button class="px-5 py-3 rounded-xl text-white  bg-gray-800 hover:bg-gray-700 text-white" id="chat-message-submit">Send</button>
             </form>
         </div><br>
     </body>
@@ -84,12 +84,36 @@
                     let html = '<div class="p-4 bg-gray-200 rounded-xl">';
                     html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
                     html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
-                    html += '<p class="text-black">' + message.content + '</p></div>';
+                    html += '<p class="text-black message-content" data-message-id="' + message.id + '">' + message.content + '</p></div>';
+
+                    html += `<button class="edit-btn${message.id}">Edit</button>`;
 
                     document.querySelector('#chat-messages').innerHTML += html;
+
                 });
 
                 scrollToBottom();
+
+                data.result.forEach(message => {
+                    document.querySelectorAll(`.edit-btn${message.id}`).forEach(function (editButton) {
+                        editButton.addEventListener('click', function () {
+                            console.log("Edit button clicked.");
+                            // Retrieve the message ID from the class of the clicked button
+                            var messageId = this.classList[0].replace('edit-btn', '');
+                            console.log("messageId", messageId);
+                            // Retrieve the message content associated with the message ID
+                            var messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+                            console.log("messageContent", messageContent);
+                            // Populate the message input field with the message content
+                            document.getElementById('chat-message-input').value = messageContent.trim();
+                
+                            // Update the text of the send button to "Update"
+                            document.getElementById('chat-message-submit').textContent = "Update";
+                        });
+                    });
+                });
+                
+
             } else {
 
                 console.error('Failed to fetch chat data.');
@@ -102,6 +126,7 @@
             document.getElementById('preloader').style.display = 'none';
         }
     }
+    
 
         const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
 
