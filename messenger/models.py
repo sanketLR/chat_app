@@ -21,5 +21,5 @@ class Message(models.Model):
         ordering = ('date_added',)
     
     def __str__(self):
-        return self.content + "  from -> " + self.user.username
+        return self.content + "  from -> " + self.user.username + " " + self.room.cr_name
     

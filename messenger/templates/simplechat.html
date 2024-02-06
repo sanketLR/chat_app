@@ -153,7 +153,7 @@
                 e.preventDefault(); 
 
                 const data = JSON.parse(e.data)
-
+                
                 if(data.message){
                     let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
                         html += '<small><p class="font-bold text-right text-black opacity-50"">' + data.now_time + '</p></small>';
@@ -163,18 +163,30 @@
                     
                     document.querySelector('#chat-messages').innerHTML += html;
                     scrollToBottom();
-                }
-                else{
+                }else if (data.pong) {
+                    console.log("Received pong message from server.");
+                } else {
                     alert('Msg was empty');
                 }
+
             }
 
             ws.onerror = function(event){
                 console.log("WebSocket error occurred ...")
             }
 
+            function sendPing() {
+                // Send a ping message to the server
+                ws.send(JSON.stringify({
+                    "ping": "ping",
+                }));
+            }
+
+            const pingInterval = setInterval(sendPing, 10000);
+
             ws.onclose = function(event){
                 console.log("Connection closed ...")
+                clearInterval(pingInterval);
             }
             
             function scrollToBottom(){

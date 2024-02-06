@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 import datetime
 import base64
 import os
+import asyncio
 
 #cryptography
 from cryptography.hazmat.backends import default_backend
@@ -40,7 +41,13 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
+        asyncio.create_task(self.send_ping())
         
+    async def send_ping(self):
+        while True:
+            await asyncio.sleep(10)  # Send ping every 30 seconds
+            await self.send(text_data=json.dumps({"pong": "pong"}))
+            
     async def receive(self, text_data):
         '''
         Receive data from the client side
@@ -60,28 +67,34 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
         client_msg = json.loads(text_data) 
 
-        message = client_msg["msg"]
-        username = client_msg["user"]
-        room = client_msg["room"]
         now_time = datetime.datetime.now()
         formatted_time = now_time.strftime("%d-%m-%Y %H:%M:%S")
+        
+        if "ping" in client_msg:
 
-        if message:
-            
-            encrypted_message = self.encrypt_message(message)
+            print("Msg from client", client_msg["ping"])
 
-            await self.save_chat_message(encrypted_message, username, formatted_time, room)
+        else:
+            message = client_msg["msg"]
+            username = client_msg["user"]
+            room = client_msg["room"]
 
-        client_msg["msg"] = encrypted_message
+            if message:
+                
+                encrypted_message = self.encrypt_message(message)
 
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type" : "user_chat",
-                "message" : client_msg,
-                "now_time" : formatted_time
-            }
-        )
+                await self.save_chat_message(encrypted_message, username, formatted_time, room)
+
+            client_msg["msg"] = encrypted_message
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type" : "user_chat",
+                    "message" : client_msg,
+                    "now_time" : formatted_time
+                }
+            )
 
     async def user_chat(self, event):
         '''
