@@ -45,10 +45,9 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         
     async def send_ping(self):
         while True:
-            await asyncio.sleep(10)  # Send ping every 30 seconds
+            await asyncio.sleep(10)  # Send ping every 10 seconds
             await self.send(text_data=json.dumps({"pong": "pong"}))
             
-    async def receive(self, text_data):
         '''
         Receive data from the client side
         Broadcast the message into all channels through the related group
@@ -64,37 +63,98 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             - Custom handler to perform some task
 
         '''
+    async def receive(self, text_data):
+        '''
+        Receive data from the client side
+        Broadcast the message into all channels through the related group
+        '''
 
-        client_msg = json.loads(text_data) 
+        client_msg = json.loads(text_data)
 
-        now_time = datetime.datetime.now()
-        formatted_time = now_time.strftime("%d-%m-%Y %H:%M:%S")
-        
-        if "ping" in client_msg:
+        if client_msg.get('action') == 'update_message':
+            # Extract necessary data from the received message
+            message_id = client_msg.get('message_id')
+            print('➡ chat_app/messenger/consumers.py:77 message_id:', message_id)
+            updated_content = client_msg.get('updated_content')
+            print('➡ chat_app/messenger/consumers.py:79 updated_content:', updated_content)
+            
+            # Perform the update operation, for example, update the message content in the database
+            # You need to implement this part based on your Django models
+            try:
+                encrypted_message_update = self.encrypt_message(updated_content)
+                message_obj_content = self.update_message_content(message_id, encrypted_message_update)
+                print('➡  message_obj_content:', message_obj_content)
 
-            print("Msg from client", client_msg["ping"])
+                now_time = datetime.datetime.now()
+                formatted_time = now_time.strftime("%d-%m-%Y %H:%M:%S")
 
+                client_msg["message_id"] = message_id
+                client_msg["updated_content"] = updated_content
+
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type" : "user_update_chat",
+                        "message" : client_msg,
+                        "now_time" : formatted_time
+                    }
+                )      
+
+            except Exception as e:
+                # Handle any errors that may occur during the update operation
+                print(f"Error updating message: {e}")
         else:
-            message = client_msg["msg"]
-            username = client_msg["user"]
-            room = client_msg["room"]
+            now_time = datetime.datetime.now()
+            formatted_time = now_time.strftime("%d-%m-%Y %H:%M:%S")
+            
+            if "ping" in client_msg:
+                print("Msg from client", client_msg["ping"])
+            else:
+                message = client_msg["msg"]
+                username = client_msg["user"]
+                room = client_msg["room"]
 
-            if message:
-                
-                encrypted_message = self.encrypt_message(message)
+                if message:
+                    encrypted_message = self.encrypt_message(message)
+                    message_obj = await self.save_chat_message(encrypted_message, username, formatted_time, room)
+                    
+                    client_msg["msg"] = encrypted_message
+                    client_msg["msg_id"] = message_obj.id 
 
-                await self.save_chat_message(encrypted_message, username, formatted_time, room)
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type" : "user_chat",
+                            "message" : client_msg,
+                            "now_time" : formatted_time
+                        }
+                    )
 
-            client_msg["msg"] = encrypted_message
+    async def user_update_chat(self, event):
 
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type" : "user_chat",
-                    "message" : client_msg,
-                    "now_time" : formatted_time
-                }
-            )
+        client_msg_time = event["now_time"]
+        client_msg = event["message"] # [msg, msg_id, user, room]
+
+        updated_content = client_msg["updated_content"]
+        print('➡ chat_app/messenger/consumers.py:150 updated_content:', updated_content)
+
+        decrypted_message = self.decrypt_message(updated_content)
+        print('➡ chat_app/messenger/consumers.py:153 decrypted_message:', decrypted_message)
+
+        message = decrypted_message if decrypted_message else "Decryption failed"
+
+        decodedMessage = message
+        print('➡ chat_app/messenger/consumers.py:158 decodedMessage:', decodedMessage)
+
+        message_id = client_msg["message_id"]
+        time = client_msg_time
+
+        await self.send(text_data=json.dumps({
+            "message": decodedMessage,
+            "message_id": message_id,
+            "now_time": time,
+        }))
+  
 
     async def user_chat(self, event):
         '''
@@ -105,7 +165,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         '''
 
         client_msg_time = event["now_time"]
-        client_msg = event["message"]
+        client_msg = event["message"] # [msg, msg_id, user, room]
 
         decrypted_message = self.decrypt_message(client_msg["msg"])
 
@@ -113,12 +173,14 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
         decodedMessage = message
 
+        message_id = client_msg["msg_id"]
         username = client_msg["user"]
         room = client_msg["room"]
         time = client_msg_time
 
         await self.send(text_data=json.dumps({
             "message": decodedMessage,
+            "message_id": message_id,
             "username": username,
             "now_time": time,
             "room": room
@@ -133,13 +195,35 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
         if get_user is not None:
 
-            Message.objects.create(
+            message_obj = Message.objects.create(
                 room = get_room,
                 user = get_user,
                 content = message,
                 date_added = now_time
             )
+            return message_obj
+        
+    @sync_to_async
+    def update_message_content(self, message_id, updated_content):
+        print('➡ chat_app/messenger/consumers.py:179 updated_content:', updated_content)
+        # Fetch the message object from the database using the message_id
+        try:
+            message_obj = Message.objects.get(pk=message_id)
+            print('➡ chat_app/messenger/consumers.py:181 message_obj:', message_obj.content)
+            # Update the message content with the new content
 
+
+            message_obj.content = updated_content
+            print('➡ chat_app/messenger/consumers.py:186 message_obj.content:', message_obj.content)
+            # Save the updated message object
+            message_obj.save()
+            return message_obj.content
+        except Message.DoesNotExist:
+            print("Message does not exist.")
+            return None
+        except Exception as e:
+            print(f"Error updating message: {e}")
+            return None    
             
     def derive_key(self, password):
 

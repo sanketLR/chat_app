@@ -50,7 +50,117 @@
     {{request.user.username | json_script:"json-username"}}
     {{room_name | json_script:"json-room_name"}}
 
-    <script>
+<script>
+
+    const username = JSON.parse(document.getElementById("json-username").textContent)
+
+    const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
+
+    const ws = new WebSocket(
+        'ws://'
+        + window.location.host
+        +'/ws/grouptchat/'
+        + roomName
+        +'/'
+    )
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        ws.onopen = function (){
+            
+            console.log("WebSocket Connection open...")
+        
+        }
+
+        ws.onmessage = function(e){
+
+            e.preventDefault(); 
+
+            const data = JSON.parse(e.data)
+            if (data.event === 'message_updated') {
+                console.log("inner message updated event in FE");
+                const messageId = data.message_id;
+                const updatedContent = data.updated_content;
+                console.log("messageId, updatedContent", messageId, updatedContent);
+                // Update the message content in the DOM
+                const messageElement = document.querySelector(`.message-content[data-message-id="${messageId}"]`);
+                console.log("messageElement",messageElement);
+                if (messageElement) {
+                    messageElement.textContent = updatedContent;
+                }
+            }
+            else if(data.message){
+                let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
+                    html += '<small><p class="font-bold text-right text-black opacity-50"">' + data.now_time + '</p></small>';
+                    html += '<p class="font-bold text-black hover:underline">' + data.username + '</p>';
+                    
+                    html += '<p class="text-black">'+ data.message + '</p></div>';
+                    
+                    if(username == data.username){
+                        html += `<button class="edit-btn${data.message_id}">Edit</button>`;
+                    }
+
+                document.querySelector('#chat-messages').innerHTML += html;
+                
+                scrollToBottom();
+                
+            }else if (data.pong) {
+                console.log("Received pong message from server.");
+            } else {
+                alert('Msg was empty');
+            }
+
+        }
+
+        ws.onerror = function(event){
+            console.log("WebSocket error occurred ...")
+        }
+
+        function sendPing() {
+            // Send a ping message to the server
+            ws.send(JSON.stringify({
+                "ping": "ping",
+            }));
+        }
+
+        const pingInterval = setInterval(sendPing, 10000);
+
+        ws.onclose = function(event){
+            console.log("Connection closed ...")
+            clearInterval(pingInterval);
+        }
+        
+        function scrollToBottom(){
+            const objDiv = document.querySelector('#chat-messages');
+            objDiv.scrollTop = objDiv.scrollHeight;
+        }
+
+        scrollToBottom();
+                                                  
+        var chatForm = document.querySelector('form.flex');
+
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var getInputText = document.getElementById("chat-message-input").value;
+            
+            if (document.getElementById('chat-message-submit').textContent === "Update") {
+                // Do nothing if the button is in update mode
+                console.log("In if condition");
+                return;
+            } else {
+                ws.send(JSON.stringify({
+                    "msg": getInputText,
+                    "user": username,
+                    "room" : roomName,
+                }));
+            }
+
+            document.getElementById("chat-message-input").value = "";
+        });
+    });
+
 
     document.getElementById('preloader').style.display = 'flex';
         
@@ -59,6 +169,7 @@
         await loadChatData();
 
     });
+
 
     async function loadChatData() {
         try {
@@ -85,8 +196,10 @@
                     html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
                     html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
                     html += '<p class="text-black message-content" data-message-id="' + message.id + '">' + message.content + '</p></div>';
+                    if(username == message.user){
 
-                    html += `<button class="edit-btn${message.id}">Edit</button>`;
+                        html += `<button class="edit-btn${message.id}">Edit</button>`;
+                    }
 
                     document.querySelector('#chat-messages').innerHTML += html;
 
@@ -98,21 +211,43 @@
                     document.querySelectorAll(`.edit-btn${message.id}`).forEach(function (editButton) {
                         editButton.addEventListener('click', function () {
                             console.log("Edit button clicked.");
-                            // Retrieve the message ID from the class of the clicked button
+
                             var messageId = this.classList[0].replace('edit-btn', '');
                             console.log("messageId", messageId);
-                            // Retrieve the message content associated with the message ID
+
                             var messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
                             console.log("messageContent", messageContent);
-                            // Populate the message input field with the message content
+
                             document.getElementById('chat-message-input').value = messageContent.trim();
                 
-                            // Update the text of the send button to "Update"
                             document.getElementById('chat-message-submit').textContent = "Update";
+                            
+                            var update_chatForm = document.querySelector('form.flex');
+
+                            document.getElementById('chat-message-submit').addEventListener('click', function () {
+                                console.log("Work on updating");
+                                
+                                // Retrieve message ID and content
+                                var messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+
+                                // Update the form button text
+                                this.textContent = "Send";
+
+                                // Prepare data to send for updating the message
+                                var data = {
+                                    action: 'update_message',
+                                    message_id: messageId,
+                                    updated_content: messageContent
+                                };
+
+                                // Send the data to the server via WebSocket
+                                console.log("Before send message to server");
+                                ws.send(JSON.stringify(data));
+                                console.log("After send message to server");
+                            });
                         });
                     });
                 });
-                
 
             } else {
 
@@ -126,112 +261,26 @@
             document.getElementById('preloader').style.display = 'none';
         }
     }
-    
 
-        const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
 
-        const ws = new WebSocket(
-            'ws://'
-            + window.location.host
-            +'/ws/grouptchat/'
-            + roomName
-            +'/'
-        )
-
-        const username = JSON.parse(document.getElementById("json-username").textContent)
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-            ws.onopen = function (){
-                
-                console.log("WebSocket Connection open...")
-            
-            }
-
-            ws.onmessage = function(e){
-
-                e.preventDefault(); 
-
-                const data = JSON.parse(e.data)
-                
-                if(data.message){
-                    let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
-                        html += '<small><p class="font-bold text-right text-black opacity-50"">' + data.now_time + '</p></small>';
-                        html += '<p class="font-bold text-black hover:underline">' + data.username + '</p>';
-                        
-                        html += '<p class="text-black">'+ data.message + '</p></div>';
-                    
-                    document.querySelector('#chat-messages').innerHTML += html;
-                    scrollToBottom();
-                }else if (data.pong) {
-                    console.log("Received pong message from server.");
-                } else {
-                    alert('Msg was empty');
-                }
-
-            }
-
-            ws.onerror = function(event){
-                console.log("WebSocket error occurred ...")
-            }
-
-            function sendPing() {
-                // Send a ping message to the server
-                ws.send(JSON.stringify({
-                    "ping": "ping",
-                }));
-            }
-
-            const pingInterval = setInterval(sendPing, 10000);
-
-            ws.onclose = function(event){
-                console.log("Connection closed ...")
-                clearInterval(pingInterval);
-            }
-            
-            function scrollToBottom(){
-                const objDiv = document.querySelector('#chat-messages');
-                objDiv.scrollTop = objDiv.scrollHeight;
-            }
-
-            scrollToBottom();
-
-            var chatForm = document.querySelector('form.flex');
-
-            chatForm.addEventListener('submit', function(e) {
-
-                e.preventDefault(); 
-
-                var getInputText = document.getElementById("chat-message-input").value;
-
-                ws.send(JSON.stringify({
-                    "msg": getInputText,
-                    "user": username,
-                    "room" : roomName,
-                }));
-
-                document.getElementById("chat-message-input").value = "";
-            });
-        });
-
-        function scrollToBottom() {
-            const objDiv = document.querySelector('#chat-messages');
-            objDiv.scrollTop = objDiv.scrollHeight;
-        }
+    function scrollToBottom() {
+        const objDiv = document.querySelector('#chat-messages');
+        objDiv.scrollTop = objDiv.scrollHeight;
+    }
         
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function(e){
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function(e){
 
-            e.preventDefault()
+        e.preventDefault()
 
-            let getSignUpLink = document.getElementById("SignUpLink")
-            let getSignInLink = document.getElementById("SignInLink")
-            
-            getSignUpLink.remove()
-            getSignInLink.remove()
+        let getSignUpLink = document.getElementById("SignUpLink")
+        let getSignInLink = document.getElementById("SignInLink")
+        
+        getSignUpLink.remove()
+        getSignInLink.remove()
 
-        })
-    </script>
+    })
+</script>
     {% endblock script %}
 {% endblock content %}
