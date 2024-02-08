@@ -5,3 +5,6 @@ __pycache__
 
 #env for cred.
 .env
+
+#db
+db.sqlite3

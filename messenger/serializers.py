@@ -37,29 +37,19 @@ class MessageSerializer(serializers.ModelSerializer):
     def derive_key(self, password):
 
         salt = b'salt_salt_salt'
-
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), salt=salt, iterations=100000, length=32, backend=default_backend())
-
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))[:32]  # Truncate to 32 bytes (256 bits)
-
         return key
     
     def get_content(self, obj):
             
         password = os.getenv("MESSAGE_PASSWORD")
-
         key = self.derive_key(password)
-
         data = base64.urlsafe_b64decode(obj.content)
-        
         iv = data[:16]
-
         ciphertext = data[16:]
-
         cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
-
         decryptor = cipher.decryptor()
-
         decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
 
         return decrypted_message.decode("utf-8")

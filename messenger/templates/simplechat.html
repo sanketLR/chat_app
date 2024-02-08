@@ -66,7 +66,7 @@
 
 
     document.addEventListener('DOMContentLoaded', function() {
-
+        var chatForm;
         ws.onopen = function (){
             
             console.log("WebSocket Connection open...")
@@ -78,19 +78,25 @@
             e.preventDefault(); 
 
             const data = JSON.parse(e.data)
+            console.log("Before message_update condition", e.data);
             if (data.event === 'message_updated') {
+                console.log("In message_updated condition", data);
+                console.log("✅✅✅✅");
                 console.log("inner message updated event in FE");
                 const messageId = data.message_id;
-                const updatedContent = data.updated_content;
-                console.log("messageId, updatedContent", messageId, updatedContent);
-                // Update the message content in the DOM
+                const updatedContent = data.message;
+                console.log("messageId ", messageId );
+                console.log("updatedContent ", updatedContent);
+
                 const messageElement = document.querySelector(`.message-content[data-message-id="${messageId}"]`);
                 console.log("messageElement",messageElement);
+                
                 if (messageElement) {
                     messageElement.textContent = updatedContent;
                 }
             }
-            else if(data.message){
+            else if(data.event === "message_save"){
+                console.log("🚩🚩🚩🚩🚩");
                 let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
                     html += '<small><p class="font-bold text-right text-black opacity-50"">' + data.now_time + '</p></small>';
                     html += '<p class="font-bold text-black hover:underline">' + data.username + '</p>';
@@ -106,7 +112,7 @@
                 scrollToBottom();
                 
             }else if (data.pong) {
-                console.log("Received pong message from server.");
+                return;
             } else {
                 alert('Msg was empty');
             }
@@ -118,7 +124,6 @@
         }
 
         function sendPing() {
-            // Send a ping message to the server
             ws.send(JSON.stringify({
                 "ping": "ping",
             }));
@@ -137,8 +142,8 @@
         }
 
         scrollToBottom();
-                                                  
-        var chatForm = document.querySelector('form.flex');
+
+        chatForm = document.querySelector('form.flex');
 
         chatForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -146,10 +151,10 @@
             var getInputText = document.getElementById("chat-message-input").value;
             
             if (document.getElementById('chat-message-submit').textContent === "Update") {
-                // Do nothing if the button is in update mode
                 console.log("In if condition");
                 return;
             } else {
+                console.log("In else condition come");
                 ws.send(JSON.stringify({
                     "msg": getInputText,
                     "user": username,
@@ -160,7 +165,6 @@
             document.getElementById("chat-message-input").value = "";
         });
     });
-
 
     document.getElementById('preloader').style.display = 'flex';
         
@@ -224,26 +228,26 @@
                             
                             var update_chatForm = document.querySelector('form.flex');
 
+                            
                             document.getElementById('chat-message-submit').addEventListener('click', function () {
                                 console.log("Work on updating");
                                 
-                                // Retrieve message ID and content
-                                var messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
-
-                                // Update the form button text
+                                var messageContent = document.getElementById("chat-message-input").value;
+                                console.log("New Message after click on edit", messageContent)
+                                console.log("Message id after click on edit", messageId);
+                                
                                 this.textContent = "Send";
 
-                                // Prepare data to send for updating the message
                                 var data = {
                                     action: 'update_message',
                                     message_id: messageId,
                                     updated_content: messageContent
                                 };
 
-                                // Send the data to the server via WebSocket
                                 console.log("Before send message to server");
                                 ws.send(JSON.stringify(data));
                                 console.log("After send message to server");
+
                             });
                         });
                     });
