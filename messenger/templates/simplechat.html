@@ -78,7 +78,7 @@
             e.preventDefault(); 
 
             const data = JSON.parse(e.data)
-            console.log("Before message_update condition", e.data);
+            console.log("Before message_update condition", data);
             if (data.event === 'message_updated') {
                 console.log("In message_updated condition", data);
                 console.log("✅✅✅✅");
@@ -94,6 +94,9 @@
                 if (messageElement) {
                     messageElement.textContent = updatedContent;
                 }
+
+                document.getElementById('chat-message-submit').textContent = "Send";
+
             }
             else if(data.event === "message_save"){
                 console.log("🚩🚩🚩🚩🚩");
@@ -149,20 +152,19 @@
             e.preventDefault();
 
             var getInputText = document.getElementById("chat-message-input").value;
-            
-            if (document.getElementById('chat-message-submit').textContent === "Update") {
-                console.log("In if condition");
-                return;
-            } else {
-                console.log("In else condition come");
+
+            // Check if the button text is "Update"
+            if (document.getElementById('chat-message-submit').textContent === "Send") {
                 ws.send(JSON.stringify({
                     "msg": getInputText,
                     "user": username,
                     "room" : roomName,
                 }));
+            } else {
+                console.log("in ELSE");
             }
 
-            document.getElementById("chat-message-input").value = "";
+            document.getElementById("chat-message-input").value = ""; // Reset input field
         });
     });
 
@@ -228,7 +230,6 @@
                             
                             var update_chatForm = document.querySelector('form.flex');
 
-                            
                             document.getElementById('chat-message-submit').addEventListener('click', function () {
                                 console.log("Work on updating");
                                 
@@ -236,18 +237,19 @@
                                 console.log("New Message after click on edit", messageContent)
                                 console.log("Message id after click on edit", messageId);
                                 
-                                this.textContent = "Send";
-
+                                
                                 var data = {
                                     action: 'update_message',
                                     message_id: messageId,
                                     updated_content: messageContent
                                 };
-
+                                
                                 console.log("Before send message to server");
                                 ws.send(JSON.stringify(data));
                                 console.log("After send message to server");
 
+                                document.getElementById("chat-message-input").value = "";
+                                document.getElementById('chat-message-submit').textContent = "Send";
                             });
                         });
                     });

@@ -88,6 +88,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         updated_content = client_msg["updated_content"]
         decrypted_message = self.decrypt_message(updated_content)
         message = decrypted_message if decrypted_message else "Decryption failed"
+        print('➡ chat_app/messenger/consumers.py:91 message from USER_UPDATE_CHAT:', message)
 
         message_id = client_msg["message_id"]
 
@@ -103,6 +104,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
         decrypted_message = self.decrypt_message(client_msg["msg"])
         message = decrypted_message if decrypted_message else "Decryption failed"
+        print('➡ chat_app/messenger/consumers.py:106 message from USER_CHAT:', message)
 
         message_id = client_msg["msg_id"]
         username = client_msg["user"]
