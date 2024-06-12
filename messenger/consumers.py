@@ -104,8 +104,6 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
 
         decrypted_message = self.decrypt_message(client_msg["msg"])
         message = decrypted_message if decrypted_message else "Decryption failed"
-        print('➡ chat_app/messenger/consumers.py:106 message from USER_CHAT:', message)
-
         message_id = client_msg["msg_id"]
         username = client_msg["user"]
         room = client_msg["room"]
@@ -118,6 +116,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             "now_time": client_msg_time,
             "room": room
         }))
+
 
     @sync_to_async
     def save_chat_message(self, message, username, now_time, room):
