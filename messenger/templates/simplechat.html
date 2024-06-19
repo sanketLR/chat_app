@@ -12,12 +12,61 @@
 
 <style>
     .chat-messages {
-        height: 500px;
+        height: calc(100vh - 350px);
         overflow-y: auto;
     }
 
     .chat-messages::-webkit-scrollbar {
         display: none;
+    }
+
+    .flex-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .chat-messages {
+            height: 100vh;
+            /* Full viewport height */
+        }
+
+        .flex-container {
+            flex-direction: row;
+        }
+
+        .icon-button {
+            padding: 10px;
+        }
+    }
+
+    .icon-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        background-color: #4A5568;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .icon-button:hover {
+        background-color: #2D3748;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .chat-messages {
+            height: calc(100vh - 350px);
+            /* Adjust according to other elements' height */
+        }
     }
 </style>
 
@@ -37,14 +86,16 @@
         </div>
     </div>
     <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
-        <form action="." method="POST" class="flex">
+        <form action="." method="POST" class="flex-container">
             {% csrf_token %}
             <input type="text" name="content" class="flex-1 mr-3 text-black" placeholder="Your message..."
                 id="chat-message-input">
-            <button type="button" class="px-5 py-3 rounded-xl text-white bg-gray-800 hover:bg-gray-700 hidden"
-                id="chat-message-clear">Clear</button>
-            <button class="px-5 py-3 rounded-xl text-white bg-gray-800 hover:bg-gray-700"
-                id="chat-message-submit">Send</button>
+            <button type="button" class="icon-button hidden" id="chat-message-clear">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="icon-button" id="chat-message-submit">
+                <i class="fas fa-paper-plane"></i>&nbsp;
+            </button>
         </form>
     </div>
     <br>
@@ -56,22 +107,18 @@
 {{ room_name | json_script:"json-room_name" }}
 
 <script>
-    const username = JSON.parse(document.getElementById("json-username").textContent)
-    const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
+    const username = JSON.parse(document.getElementById("json-username").textContent);
+    const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
     const ws = new WebSocket(
         'ws://'
         + window.location.host
         + '/ws/grouptchat/'
         + roomName
         + '/'
-    )
+    );
 
     document.addEventListener('DOMContentLoaded', function () {
-        const username = JSON.parse(document.getElementById("json-username").textContent);
-        const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
-        const ws = new WebSocket('ws://' + window.location.host + '/ws/grouptchat/' + roomName + '/');
-
-        const chatForm = document.querySelector('form.flex');
+        const chatForm = document.querySelector('form.flex-container');
         const clearButton = document.getElementById('chat-message-clear');
         const sendButton = document.getElementById('chat-message-submit');
         const messageInput = document.getElementById('chat-message-input');
@@ -93,14 +140,14 @@
                 if (messageElement) {
                     messageElement.textContent = updatedContent;
                 }
-                sendButton.textContent = "Send";
+                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
                 clearButton.classList.add('hidden');
                 editMode = false;
                 editMessageId = null;
             } else if (data.event === "message_save") {
                 let html = `<div class="p-4 bg-gray-200 rounded-xl">
                         <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
-                        <p class="font-bold text-black hover:underline">${data.username}</p>
+                        <p class="font-bold text-black hover:underline">${data.username} -- ${data.message_id}</p>
                         <p class="text-black message-content" data-message-id="${data.message_id}">${data.message}</p>
                     </div>`;
                 if (username == data.username) {
@@ -114,7 +161,7 @@
                         const messageId = this.getAttribute('data-message-id');
                         const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
                         messageInput.value = messageContent.trim();
-                        sendButton.textContent = "Update";
+                        sendButton.innerHTML = '<i class="fas fa-edit"></i>';
                         clearButton.classList.remove('hidden');
                         editMode = true;
                         editMessageId = messageId;
@@ -154,12 +201,17 @@
             const getInputText = messageInput.value.trim();
 
             if (editMode && editMessageId) {
+                console.log("editMode", editMode)
+                console.log("editMessageId", editMessageId)
+
+                console.log("in edit mode")
                 ws.send(JSON.stringify({
                     action: 'update_message',
                     message_id: editMessageId,
                     updated_content: getInputText
                 }));
             } else {
+                console.log("In crete mdoe")
                 ws.send(JSON.stringify({
                     "msg": getInputText,
                     "user": username,
@@ -168,7 +220,7 @@
             }
 
             messageInput.value = ""; // Reset input field
-            sendButton.textContent = "Send";
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
             clearButton.classList.add('hidden');
             editMode = false;
             editMessageId = null;
@@ -176,7 +228,7 @@
 
         clearButton.addEventListener('click', function () {
             messageInput.value = "";
-            sendButton.textContent = "Send";
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
             clearButton.classList.add('hidden');
             editMode = false;
             editMessageId = null;
@@ -203,9 +255,10 @@
 
             if (data.status === 200) {
                 data.result.forEach(message => {
+                    console.log("done")
                     let html = '<div class="p-4 bg-gray-200 rounded-xl">';
                     html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
-                    html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
+                    html += '<p class="font-bold text-black hover:underline">' + message.user + '--' + message.id + '</p>';
                     html += '<p class="text-black message-content" data-message-id="' + message.id + '">' + message.content + '</p></div>';
                     if (username == message.user) {
                         html += `<button class="edit-btn" data-message-id="${message.id}">Edit</button>`;
@@ -217,13 +270,18 @@
 
                 document.querySelectorAll(`.edit-btn`).forEach(function (editButton) {
                     editButton.addEventListener('click', function () {
+                        console.log("clicked")
                         const messageId = this.getAttribute('data-message-id');
+                        console.log("messageId", messageId)
                         const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+                        console.log("messageContent", messageContent)
                         document.getElementById('chat-message-input').value = messageContent.trim();
-                        document.getElementById('chat-message-submit').textContent = "Update";
+                        document.getElementById('chat-message-submit').innerHTML = '<i class="fas fa-edit"></i>';
                         document.getElementById('chat-message-clear').classList.remove('hidden');
                         editMode = true;
                         editMessageId = messageId;
+                        // Store editMessageId in local storage
+                        localStorage.setItem('editMessageId', messageId);
                     });
                 });
             } else {
@@ -236,24 +294,28 @@
             document.getElementById('preloader').style.display = 'none';
         }
     }
+    // Retrieve editMessageId from local storage
+    const storedEditMessageId = localStorage.getItem('editMessageId');
+    if (storedEditMessageId) {
+        editMessageId = storedEditMessageId;
+        editMode = true;
+    }
 
     function scrollToBottom() {
         const objDiv = document.querySelector('#chat-messages');
         objDiv.scrollTop = objDiv.scrollHeight;
     }
-
-
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function (e) {
-        e.preventDefault()
+        e.preventDefault();
 
-        let getSignUpLink = document.getElementById("SignUpLink")
-        let getSignInLink = document.getElementById("SignInLink")
+        let getSignUpLink = document.getElementById("SignUpLink");
+        let getSignInLink = document.getElementById("SignInLink");
 
-        getSignUpLink.remove()
-        getSignInLink.remove()
-    })
+        getSignUpLink.remove();
+        getSignInLink.remove();
+    });
 </script>
 {% endblock script %}
 {% endblock content %}
