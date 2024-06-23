@@ -3,9 +3,7 @@
 {% block content %}
 
 {% block nav %}
-
 {% include "navbar.html" %}
-
 {% endblock nav %}
 
 <script src="{% static " js/check_token.js" %}"></script>
@@ -29,7 +27,6 @@
     @media (max-width: 768px) {
         .chat-messages {
             height: 100vh;
-            /* Full viewport height */
         }
 
         .flex-container {
@@ -65,7 +62,6 @@
     @media (max-width: 768px) {
         .chat-messages {
             height: calc(100vh - 350px);
-            /* Adjust according to other elements' height */
         }
     }
 </style>
@@ -81,9 +77,7 @@
     </div>
 
     <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl">
-        <div class="chat-messages space-y-3" id="chat-messages">
-
-        </div>
+        <div class="chat-messages space-y-3" id="chat-messages"></div>
     </div>
     <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
         <form action="." method="POST" class="flex-container">
@@ -100,7 +94,6 @@
     </div>
     <br>
 </body>
-
 {% block script %}
 
 {{ request.user.username | json_script:"json-username" }}
@@ -109,13 +102,7 @@
 <script>
     const username = JSON.parse(document.getElementById("json-username").textContent);
     const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
-    const ws = new WebSocket(
-        'ws://'
-        + window.location.host
-        + '/ws/grouptchat/'
-        + roomName
-        + '/'
-    );
+    const ws = new WebSocket('ws://' + window.location.host + '/ws/grouptchat/' + roomName + '/');
 
     document.addEventListener('DOMContentLoaded', function () {
         const chatForm = document.querySelector('form.flex-container');
@@ -123,8 +110,15 @@
         const sendButton = document.getElementById('chat-message-submit');
         const messageInput = document.getElementById('chat-message-input');
 
-        let editMode = false;
-        let editMessageId = null;
+        // let editMode = false;
+        // let editMessageId = null;
+
+        // Retrieve editMessageId from local storage
+        //const storedEditMessageId = localStorage.getItem('editMessageId');
+        //if (storedEditMessageId) {
+        //    editMessageId = storedEditMessageId;
+        //    editMode = true;
+        //}
 
         ws.onopen = function () {
             console.log("WebSocket Connection open...");
@@ -146,10 +140,10 @@
                 editMessageId = null;
             } else if (data.event === "message_save") {
                 let html = `<div class="p-4 bg-gray-200 rounded-xl">
-                        <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
-                        <p class="font-bold text-black hover:underline">${data.username} -- ${data.message_id}</p>
-                        <p class="text-black message-content" data-message-id="${data.message_id}">${data.message}</p>
-                    </div>`;
+                    <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
+                    <p class="font-bold text-black hover:underline">${data.username} -- ${data.message_id}</p>
+                    <p class="text-black message-content" data-message-id="${data.message_id}">${data.message}</p>
+                </div>`;
                 if (username == data.username) {
                     html += `<button class="edit-btn" data-message-id="${data.message_id}">Edit</button>`;
                 }
@@ -163,8 +157,11 @@
                         messageInput.value = messageContent.trim();
                         sendButton.innerHTML = '<i class="fas fa-edit"></i>';
                         clearButton.classList.remove('hidden');
+
                         editMode = true;
                         editMessageId = messageId;
+
+                        localStorage.setItem('editMessageId', messageId); // Store editMessageId in local storage
                     });
                 });
             } else if (data.pong) {
@@ -200,18 +197,23 @@
             e.preventDefault();
             const getInputText = messageInput.value.trim();
 
-            if (editMode && editMessageId) {
-                console.log("editMode", editMode)
-                console.log("editMessageId", editMessageId)
+            if (getInputText == '' || getInputText == null) {
+                alert('Please enter a text')
+            }
 
-                console.log("in edit mode")
+            // console.log('editMode', editMode)
+            // console.log('editMessageId', editMessageId)
+            const localEditMode = typeof editMode !== 'undefined' ? editMode : false;
+            const localEditMessageId = typeof editMessageId !== 'undefined' ? editMessageId : null;
+
+            if (localEditMode && localEditMessageId) {
                 ws.send(JSON.stringify({
                     action: 'update_message',
-                    message_id: editMessageId,
+                    message_id: localEditMessageId,
                     updated_content: getInputText
                 }));
+                localStorage.removeItem('editMessageId'); // Clear local storage after updating the message
             } else {
-                console.log("In crete mdoe")
                 ws.send(JSON.stringify({
                     "msg": getInputText,
                     "user": username,
@@ -222,6 +224,7 @@
             messageInput.value = ""; // Reset input field
             sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
             clearButton.classList.add('hidden');
+
             editMode = false;
             editMessageId = null;
         });
@@ -230,8 +233,11 @@
             messageInput.value = "";
             sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
             clearButton.classList.add('hidden');
+
             editMode = false;
             editMessageId = null;
+
+            localStorage.removeItem('editMessageId'); // Clear local storage when canceling edit mode
         });
 
         loadChatData();
@@ -255,7 +261,6 @@
 
             if (data.status === 200) {
                 data.result.forEach(message => {
-                    console.log("done")
                     let html = '<div class="p-4 bg-gray-200 rounded-xl">';
                     html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
                     html += '<p class="font-bold text-black hover:underline">' + message.user + '--' + message.id + '</p>';
@@ -270,17 +275,15 @@
 
                 document.querySelectorAll(`.edit-btn`).forEach(function (editButton) {
                     editButton.addEventListener('click', function () {
-                        console.log("clicked")
                         const messageId = this.getAttribute('data-message-id');
-                        console.log("messageId", messageId)
                         const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
-                        console.log("messageContent", messageContent)
                         document.getElementById('chat-message-input').value = messageContent.trim();
                         document.getElementById('chat-message-submit').innerHTML = '<i class="fas fa-edit"></i>';
                         document.getElementById('chat-message-clear').classList.remove('hidden');
+
                         editMode = true;
                         editMessageId = messageId;
-                        // Store editMessageId in local storage
+
                         localStorage.setItem('editMessageId', messageId);
                     });
                 });
@@ -293,12 +296,6 @@
         } finally {
             document.getElementById('preloader').style.display = 'none';
         }
-    }
-    // Retrieve editMessageId from local storage
-    const storedEditMessageId = localStorage.getItem('editMessageId');
-    if (storedEditMessageId) {
-        editMessageId = storedEditMessageId;
-        editMode = true;
     }
 
     function scrollToBottom() {
