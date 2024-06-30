@@ -12,7 +12,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
+import logging
 
 class SimpleChatConsumer(AsyncWebsocketConsumer):
 
@@ -32,29 +32,43 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         client_msg = json.loads(text_data)
         
-        if client_msg.get('action') == 'update_message':
+        if client_msg.get('action') == 'delete_message':
             message_id = client_msg.get('message_id')
-            updated_content = client_msg.get('updated_content')
-            
-            try:
-                encrypted_message_update = self.encrypt_message(updated_content)
-                message_obj_content = await self.update_message_content(message_id, encrypted_message_update)
-                
-                now_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                client_msg["message_id"] = message_id
-                client_msg["updated_content"] = encrypted_message_update
-
+            if message_id:
+                await self.delete_message_content(message_id)
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
-                        "type": "user_update_chat",
-                        "message": client_msg,
-                        "now_time": now_time
+                        "type": "user_delete_chat",
+                        "message_id": message_id
                     }
-                )      
+                )
 
-            except Exception as e:
-                print(f"Error updating message: {e}")
+        elif client_msg.get('action') == 'update_message':
+            message_id = client_msg.get('message_id')
+            updated_content = client_msg.get('updated_content')
+            if  updated_content  !=  "" or None:
+                try:
+                    encrypted_message_update = self.encrypt_message(updated_content)
+                    message_obj_content = await self.update_message_content(message_id, encrypted_message_update)
+                    
+                    now_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    client_msg["message_id"] = message_id
+                    client_msg["updated_content"] = encrypted_message_update
+
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "user_update_chat",
+                            "message": client_msg,
+                            "now_time": now_time
+                        }
+                    )      
+
+                except Exception as e:
+                    logging.error(f"Error updating message: {e}")
+            else:
+                logging.exception("Empty message")
         else:
             now_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
@@ -81,6 +95,14 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
                         }
                     )
 
+    async def user_delete_chat(self, event):
+        message_id = event["message_id"]
+
+        await self.send(text_data=json.dumps({
+            'event': 'message_deleted',
+            'message_id': message_id
+        }))
+        
     async def user_update_chat(self, event):
         client_msg_time = event["now_time"]
         client_msg = event["message"]
@@ -88,7 +110,6 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         updated_content = client_msg["updated_content"]
         decrypted_message = self.decrypt_message(updated_content)
         message = decrypted_message if decrypted_message else "Decryption failed"
-        print('➡ chat_app/messenger/consumers.py:91 message from USER_UPDATE_CHAT:', message)
 
         message_id = client_msg["message_id"]
 
@@ -140,10 +161,23 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             message_obj.save()
             return message_obj.content
         except Message.DoesNotExist:
-            print("Message does not exist.")
+            logging.exception("Message does not exist.")
             return None
         except Exception as e:
             print(f"Error updating message: {e}")
+            return None
+            
+    @sync_to_async
+    def delete_message_content(self, message_id):
+        try:
+            message_obj = Message.objects.get(pk=message_id)
+            message_obj.delete()
+            return "Deleted"
+        except Message.DoesNotExist:
+            logging.exception("Message does not exist.")
+            return None
+        except Exception as e:
+            print(f"Error deleting message: {e}")
             return None
             
     def derive_key(self, password):
