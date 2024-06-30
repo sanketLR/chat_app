@@ -41,7 +41,7 @@ def get_status_msg(key):
         'LOGGED_IN': 'Logged in successFully',
         'NOT_ACCESS': 'You can not access this functionality',
         'USER_PASS_REQ': "username and password required",
-        'NOT_LOGGED_IN': "username or password not matched",
+        'NOT_LOGGED_IN': "Wrong username or password",
         'LOGGED_OUT': "user logged out",
         'INVALID_TOKEN': "passed token is not valid.",
         'DATA_NOT_FOUND': "data not found.",

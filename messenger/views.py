@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction
 from messenger.models import *
@@ -25,6 +25,10 @@ def signUp(request):
 
 
 def signIn(request):
+
+    if request.user.is_authenticated:
+        return redirect("rooms")
+    
     return render(request, "signin.html")
 
 
@@ -151,6 +155,7 @@ class RoomsCreate(APIView):
         serializer = ChatRoomSerializer(data = data)
         if serializer.is_valid():
             serializer.save()
+            time.sleep(1)
             return get_response(status.HTTP_200_OK, serializer.data , get_status_msg('CREATED'))
         return get_response(status.HTTP_400_BAD_REQUEST, serializer.errors , get_status_msg('ERROR_400'))
 
