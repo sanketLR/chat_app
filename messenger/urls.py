@@ -15,7 +15,7 @@ urlpatterns = [
   path("UserLogout/", UserLogout.as_view(), name="UserLogout"),
 
   path("RoomsCreate/", RoomsCreate.as_view(), name="RoomsCreate"),
-  path("RoomsDelete/<int:id>/", RoomsDelete.as_view(), name="RoomsDelete"),
+  path("RoomsDelete/<str:name>/", RoomsDelete.as_view(), name="RoomsDelete"),
   path("RoomsList/", RoomsList.as_view(), name="RoomsList"),
   path("LoadChatData/", LoadChatData.as_view(), name="LoadChatData"),
 

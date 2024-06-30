@@ -8,88 +8,95 @@
         margin: 0;
     }
 </style>
-    {% block nav %}
-    
-        {% include "navbar.html" %}
-        
-    {% endblock nav %}
-    <main>
-        <div class="bg-gray-800 p-8 rounded-md shadow-md max-w-md">
-            <h2 class="text-3xl font-semibold mb-6">User Sign In</h2>
+{% block nav %}
+{% include "navbar.html" %}
+{% endblock nav %}
+<main>
+    <div class="bg-gray-900 p-8 rounded-md shadow-md max-w-md text-white font-serif">
+        <h2 class="text-3xl font-semibold mb-6">User Sign In</h2>
 
-            <form id="userSignIn" class="space-y-4">
-                {% csrf_token %}
-                <div class="flex flex-col">
-                    <label for="username" class="text-lg">Username:</label>
-                    <input type="text" id="username" name="username" class="p-2 rounded-md text-black" required>
-                </div>
+        <form id="userSignIn" class="space-y-4">
+            {% csrf_token %}
+            <div class="flex flex-col">
+                <label for="username" class="text-lg">Username:</label>
+                <input type="text" id="username" name="username" class="p-2 rounded-md text-black" required>
+            </div>
 
-                <div class="flex flex-col">
-                    <label for="password" class="text-lg">Password:</label>
-                    <input type="password" id="password" name="password" class="p-2 rounded-md text-black" required>
-                </div>
+            <div class="flex flex-col">
+                <label for="password" class="text-lg">Password:</label>
+                <input type="password" id="password" name="password" class="p-2 rounded-md text-black" required>
+            </div>
 
-                <button type="button" id="SignInUser" class="bg-blue-500 text-white px-4 py-2 rounded-md">Sign In</button>
-            </form>
-        </div>
-    </main>
+            <button type="button" id="SignInUser" class="bg-blue-500 text-white px-4 py-2 rounded-md">Sign In</button>
+        </form>
+    </div>
+</main>
 
-    <script>
+<!-- Toastify CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
-        async function signIn() {
+<script>
+    async function signIn() {
+        let userName = document.getElementById("username").value;
+        let password = document.getElementById("password").value;
+        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
 
-            let userName = document.getElementById("username").value
-            let password = document.getElementById("password").value
+        let Jsondata = {
+            "username": userName,
+            "password": password
+        };
 
-            const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/messenger/SignInUser/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(Jsondata),
+            });
 
-            let Jsondata = {
-                "username" : userName,
-                "password" : password
+            const data = await response.json();
+
+            if (data.code === 200) {
+                console.log(data.data);
+                localStorage.setItem("accessToken", data.data.access);
+                localStorage.setItem("refreshToken", data.data.refresh);
+                window.location.href = "http://127.0.0.1:8000/api/messenger/rooms/";
+            } else if (data.code === 400) {
+                Toastify({
+                    text: data.message || "Wrong username or password",
+                    backgroundColor: "rgba(238, 75, 43, 0.9)", textColor: "#EE4B2B",
+                    duration: 3000,
+                    close: true,
+                    textColor: "#000000", // Black text color
+                    stopOnFocus: true,
+                }).showToast();
             }
-            
-            try {
-                const response = await fetch('http://127.0.0.1:8000/api/messenger/SignInUser/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(Jsondata),
-                });
-
-                const data = await response.json();
-
-                if (data.code === 200) {
-                    
-                    console.log(data.data);
-                    localStorage.setItem("accessToken", data.data.access);
-                    localStorage.setItem("refreshToken", data.data.refresh);
-                    window.location.href = "http://127.0.0.1:8000/api/messenger/rooms/";
-
-                }
-
-                if(data.code === 400){
-                    console.log("data", data);
-                    console.log("400 come");
-                }
-                
-            } catch (error) {
-                console.error('Error:', error.message);
-            }
+        } catch (error) {
+            console.error('Error:', error.message);
+            Toastify({
+                text: "An error occurred. Please try again later.",
+                backgroundColor: "rgba(238, 75, 43, 0.9)", textColor: "#EE4B2B",
+                duration: 3000,
+                close: true,
+                stopOnFocus: true,
+                textColor: "#000000", // Black text color
+            }).showToast();
         }
+    }
 
-        document.getElementById("SignInUser").addEventListener("click", signIn);
+    document.getElementById("SignInUser").addEventListener("click", signIn);
+</script>
 
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function(e){
-            e.preventDefault()
-            let getSignOutLink = document.getElementById("SignOutLink")
-            let getRoomsLink = document.getElementById("RoomsLink")
-            getSignOutLink.remove();
-            getRoomsLink.remove();
-        })
-    </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function (e) {
+        e.preventDefault();
+        let getSignOutLink = document.getElementById("SignOutLink");
+        let getRoomsLink = document.getElementById("RoomsLink");
+        if (getSignOutLink) getSignOutLink.remove();
+        if (getRoomsLink) getRoomsLink.remove();
+    });
+</script>
 {% endblock content %}

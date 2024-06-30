@@ -32,10 +32,16 @@
                     </div>
                 
                     <span type="button" id="createRooms" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                        Create Room
+                        <span id="createRoomText">Create Room</span>
                         <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
                         </svg>
+                        <span id="spinner" class="hidden ms-2">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                        </span>
                     </span>
 
                 </form>
@@ -45,35 +51,37 @@
 </div>
 
 <script>
-
     async function createRoomFunc() {
-    
-        let userName = document.getElementById("room_name").value
-        let password = document.getElementById("room_discription").value
-    
+        let userName = document.getElementById("room_name").value;
+        let password = document.getElementById("room_discription").value;
+
         if (!userName) {
             document.getElementById("room_name_error").classList.remove("hidden");
             return; // Stop execution if the name is empty
         } else {
             document.getElementById("room_name_error").classList.add("hidden");
         }
-    
+
         if (!password) {
             document.getElementById("room_discription_error").classList.remove("hidden");
             return; // Stop execution if the description is empty
         } else {
             document.getElementById("room_discription_error").classList.add("hidden");
         }
-    
+
         const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
-    
+
         const accessToken = localStorage.getItem("accessToken");
         const refreshToken = localStorage.getItem("refreshToken");
-    
+
         let Jsondata = {
-            "cr_name" : userName,
-            "cr_discription" : password
-        }
+            "cr_name": userName,
+            "cr_discription": password
+        };
+
+        document.getElementById("createRoomText").classList.add("hidden");
+        document.getElementById("spinner").classList.remove("hidden");
+
         try {
             $.ajax({
                 url: 'http://127.0.0.1:8000/api/messenger/RoomsCreate/',
@@ -86,24 +94,34 @@
                 data: JSON.stringify(Jsondata),
                 dataType: 'json',
                 success: function (data) {
+                    document.getElementById("createRoomText").classList.remove("hidden");
+                    document.getElementById("spinner").classList.add("hidden");
+
                     if (data.code === 200) {
                         window.location.reload();
                     }
-    
+
                     if (data.code === 400) {
                         console.log("data", data);
                         console.log("400 come");
                     }
                 },
                 error: function (error) {
+                    document.getElementById("createRoomText").classList.remove("hidden");
+                    document.getElementById("spinner").classList.add("hidden");
+
                     console.error('Error:', error.statusText);
                 }
             });
         } catch (error) {
+            document.getElementById("createRoomText").classList.remove("hidden");
+            document.getElementById("spinner").classList.add("hidden");
+
             console.error('Error:', error.message);
         }
     }
+
     document.getElementById("createRooms").addEventListener("click", createRoomFunc);
-    
+        
 </script>
     

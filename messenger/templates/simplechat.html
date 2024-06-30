@@ -2,99 +2,294 @@
 {% load static %}
 {% block content %}
 
-    {% block nav %}
-    
-        {% include "navbar.html" %}
-        
-    {% endblock nav %}
+{% block nav %}
+{% include "navbar.html" %}
+{% endblock nav %}
 
-    <script src="{% static "js/check_token.js" %}"></script>
+<script src="{% static " js/check_token.js" %}"></script>
 
-    <style>
+<style>
+    .chat-messages {
+        height: calc(100vh - 350px);
+        overflow-y: auto;
+    }
 
-        .chat-messages{
-            height:500px;
-            overflow-y:auto;
+    .chat-messages::-webkit-scrollbar {
+        display: none;
+    }
+
+    .flex-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .chat-messages {
+            height: 100vh;
         }
-        .chat-messages::-webkit-scrollbar {
-            display: none;
+
+        .flex-container {
+            flex-direction: row;
         }
 
-    </style>
+        .icon-button {
+            padding: 10px;
+        }
+    }
 
-    <body class="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900">
-        <div id="preloader" class="fixed top-0 left-0 w-screen h-screen flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
-            <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-blue-500"></div>
-        </div>
-        <div class="p-10 lg:p-10 text-center">
-            <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">{{room.cr_name}}</h1>
-            <h5 class=" text-white">{{request.user.username}}</h5>
-        </div>
+    .icon-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        background-color: #4A5568;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
 
-        <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl ">
-            <div class="chat-messages space-y-3" id="chat-messages">
-                
-            </div>
-        </div>
-        <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
-            <form action="." method="POST" class="flex">
-                {% csrf_token %}
-                <input type="text" name="content" class="flex-1 mr-3 text-black" placeholder="Your message..." id="chat-message-input">
-                <button class="px-5 py-3 rounded-xl text-white  bg-gray-800 hover:bg-gray-700 text-black" id="chat-message-submit">Send</button>
-            </form>
-        </div><br>
-    </body>
+    .icon-button:hover {
+        background-color: #2D3748;
+    }
 
-    {% block script %}
+    .hidden {
+        display: none;
+    }
 
-    {{request.user.username | json_script:"json-username"}}
-    {{room_name | json_script:"json-room_name"}}
+    @media (max-width: 768px) {
+        .chat-messages {
+            height: calc(100vh - 350px);
+        }
+    }
+</style>
 
-    <script>
+<body class="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900">
+    <div id="preloader"
+        class="fixed top-0 left-0 w-screen h-screen flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-blue-500"></div>
+    </div>
+    <div class="p-10 lg:p-10 text-center">
+        <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">{{ room.cr_name }}</h1>
+        <h5 class="text-white">{{ request.user.username }}</h5>
+    </div>
 
-    document.getElementById('preloader').style.display = 'flex';
-        
-    document.addEventListener('DOMContentLoaded', async function () {
-        
-        await loadChatData();
+    <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl">
+        <div class="chat-messages space-y-3" id="chat-messages"></div>
+    </div>
+    <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
+        <form action="." method="POST" class="flex-container">
+            {% csrf_token %}
+            <input type="text" name="content" class="flex-1 mr-3 text-black" placeholder="Your message..."
+                id="chat-message-input">
+            <button type="button" class="icon-button hidden" id="chat-message-clear">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="icon-button" id="chat-message-submit">
+                <i class="fas fa-paper-plane"></i>&nbsp;
+            </button>
+        </form>
+    </div>
+    <br>
+</body>
+{% block script %}
 
+{{ request.user.username | json_script:"json-username" }}
+{{ room_name | json_script:"json-room_name" }}
+
+<script>
+    const username = JSON.parse(document.getElementById("json-username").textContent);
+    const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
+    const ws = new WebSocket('ws://' + window.location.host + '/ws/grouptchat/' + roomName + '/');
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatForm = document.querySelector('form.flex-container');
+        const clearButton = document.getElementById('chat-message-clear');
+        const sendButton = document.getElementById('chat-message-submit');
+        const messageInput = document.getElementById('chat-message-input');
+
+        // let editMode = false;
+        // let editMessageId = null;
+
+        // Retrieve editMessageId from local storage
+        //const storedEditMessageId = localStorage.getItem('editMessageId');
+        //if (storedEditMessageId) {
+        //    editMessageId = storedEditMessageId;
+        //    editMode = true;
+        //}
+
+        ws.onopen = function () {
+            console.log("WebSocket Connection open...");
+        };
+
+        ws.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+
+            if (data.event === 'message_updated') {
+                const messageId = data.message_id;
+                const updatedContent = data.message;
+                const messageElement = document.querySelector(`.message-content[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.textContent = updatedContent;
+                }
+                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
+                clearButton.classList.add('hidden');
+                editMode = false;
+                editMessageId = null;
+            } else if (data.event === "message_save") {
+                let html = `<div class="p-4 bg-gray-200 rounded-xl">
+                    <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
+                    <p class="font-bold text-black hover:underline">${data.username} -- ${data.message_id}</p>
+                    <p class="text-black message-content" data-message-id="${data.message_id}">${data.message}</p>
+                </div>`;
+                if (username == data.username) {
+                    html += `<button class="edit-btn" data-message-id="${data.message_id}">Edit</button>`;
+                }
+                document.querySelector('#chat-messages').innerHTML += html;
+                scrollToBottom();
+
+                document.querySelectorAll(`.edit-btn`).forEach(function (editButton) {
+                    editButton.addEventListener('click', function () {
+                        const messageId = this.getAttribute('data-message-id');
+                        const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+                        messageInput.value = messageContent.trim();
+                        sendButton.innerHTML = '<i class="fas fa-edit"></i>';
+                        clearButton.classList.remove('hidden');
+
+                        editMode = true;
+                        editMessageId = messageId;
+
+                        localStorage.setItem('editMessageId', messageId); // Store editMessageId in local storage
+                    });
+                });
+            } else if (data.pong) {
+                return;
+            } else {
+                alert('Msg was empty');
+            }
+        };
+
+        ws.onerror = function () {
+            console.log("WebSocket error occurred ...");
+        };
+
+        function sendPing() {
+            ws.send(JSON.stringify({ "ping": "ping" }));
+        }
+
+        const pingInterval = setInterval(sendPing, 10000);
+
+        ws.onclose = function () {
+            console.log("Connection closed ...");
+            clearInterval(pingInterval);
+        };
+
+        function scrollToBottom() {
+            const objDiv = document.querySelector('#chat-messages');
+            objDiv.scrollTop = objDiv.scrollHeight;
+        }
+
+        scrollToBottom();
+
+        chatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const getInputText = messageInput.value.trim();
+
+            if (getInputText == '' || getInputText == null) {
+                alert('Please enter a text')
+            }
+
+            // console.log('editMode', editMode)
+            // console.log('editMessageId', editMessageId)
+            const localEditMode = typeof editMode !== 'undefined' ? editMode : false;
+            const localEditMessageId = typeof editMessageId !== 'undefined' ? editMessageId : null;
+
+            if (localEditMode && localEditMessageId) {
+                ws.send(JSON.stringify({
+                    action: 'update_message',
+                    message_id: localEditMessageId,
+                    updated_content: getInputText
+                }));
+                localStorage.removeItem('editMessageId'); // Clear local storage after updating the message
+            } else {
+                ws.send(JSON.stringify({
+                    "msg": getInputText,
+                    "user": username,
+                    "room": roomName,
+                }));
+            }
+
+            messageInput.value = ""; // Reset input field
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
+            clearButton.classList.add('hidden');
+
+            editMode = false;
+            editMessageId = null;
+        });
+
+        clearButton.addEventListener('click', function () {
+            messageInput.value = "";
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
+            clearButton.classList.add('hidden');
+
+            editMode = false;
+            editMessageId = null;
+
+            localStorage.removeItem('editMessageId'); // Clear local storage when canceling edit mode
+        });
+
+        loadChatData();
     });
 
     async function loadChatData() {
         try {
-
-            const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
-
+            const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
             const accessToken = localStorage.getItem("accessToken");
-            
+
             const response = await fetch('http://127.0.0.1:8000/api/messenger/LoadChatData/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${accessToken}`
                 },
-                body : JSON.stringify(roomName)
+                body: JSON.stringify(roomName)
             });
-            
+
             const data = await response.json();
 
             if (data.status === 200) {
-
                 data.result.forEach(message => {
                     let html = '<div class="p-4 bg-gray-200 rounded-xl">';
                     html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
-                    html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
-                    html += '<p class="text-black">' + message.content + '</p></div>';
-
+                    html += '<p class="font-bold text-black hover:underline">' + message.user + '--' + message.id + '</p>';
+                    html += '<p class="text-black message-content" data-message-id="' + message.id + '">' + message.content + '</p></div>';
+                    if (username == message.user) {
+                        html += `<button class="edit-btn" data-message-id="${message.id}">Edit</button>`;
+                    }
                     document.querySelector('#chat-messages').innerHTML += html;
                 });
 
                 scrollToBottom();
-            } else {
 
+                document.querySelectorAll(`.edit-btn`).forEach(function (editButton) {
+                    editButton.addEventListener('click', function () {
+                        const messageId = this.getAttribute('data-message-id');
+                        const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+                        document.getElementById('chat-message-input').value = messageContent.trim();
+                        document.getElementById('chat-message-submit').innerHTML = '<i class="fas fa-edit"></i>';
+                        document.getElementById('chat-message-clear').classList.remove('hidden');
+
+                        editMode = true;
+                        editMessageId = messageId;
+
+                        localStorage.setItem('editMessageId', messageId);
+                    });
+                });
+            } else {
                 console.error('Failed to fetch chat data.');
                 window.location = "http://127.0.0.1:8000/api/messenger/signIn/";
-
             }
         } catch (error) {
             console.error('Error fetching chat data:', error);
@@ -103,98 +298,21 @@
         }
     }
 
-        const roomName = JSON.parse(document.getElementById("json-room_name").textContent)
+    function scrollToBottom() {
+        const objDiv = document.querySelector('#chat-messages');
+        objDiv.scrollTop = objDiv.scrollHeight;
+    }
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function (e) {
+        e.preventDefault();
 
-        const ws = new WebSocket(
-            'ws://'
-            + window.location.host
-            +'/ws/grouptchat/'
-            + roomName
-            +'/'
-        )
+        let getSignUpLink = document.getElementById("SignUpLink");
+        let getSignInLink = document.getElementById("SignInLink");
 
-        const username = JSON.parse(document.getElementById("json-username").textContent)
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-            ws.onopen = function (){
-                
-                console.log("WebSocket Connection open...")
-            
-            }
-
-            ws.onmessage = function(e){
-
-                e.preventDefault(); 
-
-                const data = JSON.parse(e.data)
-
-                if(data.message){
-                    let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
-                        html += '<small><p class="font-bold text-right text-black opacity-50"">' + data.now_time + '</p></small>';
-                        html += '<p class="font-bold text-black hover:underline">' + data.username + '</p>';
-                        
-                        html += '<p class="text-black">'+ data.message + '</p></div>';
-                    
-                    document.querySelector('#chat-messages').innerHTML += html;
-                    scrollToBottom();
-                }
-                else{
-                    alert('Msg was empty');
-                }
-            }
-
-            ws.onerror = function(event){
-                console.log("WebSocket error occurred ...")
-            }
-
-            ws.onclose = function(event){
-                console.log("Connection closed ...")
-            }
-            
-            function scrollToBottom(){
-                const objDiv = document.querySelector('#chat-messages');
-                objDiv.scrollTop = objDiv.scrollHeight;
-            }
-
-            scrollToBottom();
-
-            var chatForm = document.querySelector('form.flex');
-
-            chatForm.addEventListener('submit', function(e) {
-
-                e.preventDefault(); 
-
-                var getInputText = document.getElementById("chat-message-input").value;
-
-                ws.send(JSON.stringify({
-                    "msg": getInputText,
-                    "user": username,
-                    "room" : roomName,
-                }));
-
-                document.getElementById("chat-message-input").value = "";
-            });
-        });
-
-        function scrollToBottom() {
-            const objDiv = document.querySelector('#chat-messages');
-            objDiv.scrollTop = objDiv.scrollHeight;
-        }
-        
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function(e){
-
-            e.preventDefault()
-
-            let getSignUpLink = document.getElementById("SignUpLink")
-            let getSignInLink = document.getElementById("SignInLink")
-            
-            getSignUpLink.remove()
-            getSignInLink.remove()
-
-        })
-    </script>
-    {% endblock script %}
+        getSignUpLink.remove();
+        getSignInLink.remove();
+    });
+</script>
+{% endblock script %}
 {% endblock content %}
