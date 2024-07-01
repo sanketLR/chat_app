@@ -9,7 +9,6 @@ from django.db import transaction
 class TradeConsumer(AsyncWebsocketConsumer):
     
     async def connect_to_websocket(self, uris):
-        print("➡ self :", self)
         
         connections = []
 
@@ -38,12 +37,10 @@ class TradeConsumer(AsyncWebsocketConsumer):
             "wss://stream.binance.com:9443/ws/ethbtc@trade",
             "wss://stream.binance.com:9443/ws/axsbtc@trade"
         ]
-        print("➡ uri_lst :", uri_lst)
         
         connections = await self.connect_to_websocket(uri_lst)
         
         tasks = [self.receive_data(connection) for connection in connections]
-        print("➡ tasks :", tasks)
         
         await asyncio.gather(*tasks)
 

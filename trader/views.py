@@ -16,7 +16,6 @@ class RetrieveAllRedisData(APIView):
         
         # Get all keys
         keys = async_to_sync(channel_layer.group_layer.keys)()
-        print("➡ keys :", keys)
         
         # Retrieve corresponding values
         data = async_to_sync(channel_layer.group_layer.mget)(keys)

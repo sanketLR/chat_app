@@ -102,7 +102,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             'event': 'message_deleted',
             'message_id': message_id
         }))
-        
+
     async def user_update_chat(self, event):
         client_msg_time = event["now_time"]
         client_msg = event["message"]
@@ -164,7 +164,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             logging.exception("Message does not exist.")
             return None
         except Exception as e:
-            print(f"Error updating message: {e}")
+            logging.exception(f"Error updating message: {e}")
             return None
             
     @sync_to_async
@@ -177,7 +177,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
             logging.exception("Message does not exist.")
             return None
         except Exception as e:
-            print(f"Error deleting message: {e}")
+            logging.exception(f"Error deleting message: {e}")
             return None
             
     def derive_key(self, password):
