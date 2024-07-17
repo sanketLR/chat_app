@@ -124,32 +124,38 @@ class GoogleLoginApi(APIView):
     def get(self, request, *args, **kwargs):
         code = request.query_params.get('code')
         error = request.query_params.get('error')
-
-        login_url = f'{settings.BASE_FRONTEND_URL}/login'
+        base_frontend_url = os.getenv('DJANGO_BASE_FRONTEND_URL')
+        login_url = f'{base_frontend_url}/api/messenger/signIn/'
 
         if error or not code:
             params = urlencode({'error': error})
             return redirect(f'{login_url}?{params}')
 
-        redirect_uri = f'{settings.BASE_FRONTEND_URL}/google/'
-        access_token = google_get_access_token(code=code, redirect_uri=redirect_uri)
+        redirect_uri = f'{base_frontend_url}/api/messenger/auth/login/google/'
+        try:
+
+            access_token = google_get_access_token(code=code, redirect_uri=redirect_uri)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+        
         user_data = google_get_user_info(access_token=access_token)
 
         try:
             user = User.objects.get(email=user_data['email'])
+            print('➡ chat_app/messenger/views.py:145 user:', user)
         except User.DoesNotExist:
             username = user_data['email'].split('@')[0]
+            print('➡ chat_app/messenger/views.py:148 username:', username)
             first_name = user_data.get('given_name', '')
+            print('➡ chat_app/messenger/views.py:150 first_name:', first_name)
             last_name = user_data.get('family_name', '')
+            print('➡ chat_app/messenger/views.py:152 last_name:', last_name)
 
             user = User.objects.create(
                 username=username,
                 email=user_data['email'],
                 first_name=first_name,
                 last_name=last_name,
-                registration_method='google',
-                phone_no=None,
-                referral=None
             )
 
         access_token, refresh_token = generate_tokens_for_user(user)
@@ -160,7 +166,7 @@ class GoogleLoginApi(APIView):
         }
         
         # You can store the tokens in session or cookies here before redirecting
-        response = redirect(settings.BASE_FRONTEND_URL)
+        response = redirect(base_frontend_url)
         response.set_cookie('access_token', access_token)
         response.set_cookie('refresh_token', refresh_token)
         return response
