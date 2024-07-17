@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.urls import path, include
+
 from messenger.views import *
 urlpatterns = [
     
   path("signUp/", signUp, name="signUp"),
+  path("auth/login/google/", GoogleLoginApi.as_view(), name="login-with-google"),
   path("signIn/", signIn, name="signIn"),
   path("simpleChat/<str:name>/", simpleChat, name="simpleChat"),
   path("rooms/", rooms, name="rooms"),
