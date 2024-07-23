@@ -15,7 +15,13 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import logging
 
 class SimpleChatConsumer(AsyncWebsocketConsumer):
+    
 
+    """
+        We can use self.scope['user']
+
+        Here we can get the request.user 
+    """
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['name'].replace(' ', '_')
         self.room_group_name = self.room_name
