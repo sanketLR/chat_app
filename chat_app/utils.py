@@ -10,6 +10,15 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import os
+import requests
+import logging
+# Add logging to debug
+logger = logging.getLogger(__name__)
+
+GOOGLE_ID_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
+GOOGLE_ACCESS_TOKEN_OBTAIN_URL = 'https://oauth2.googleapis.com/token'
+GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
+
 
 
 def get_response(code_status, payload, msg):
@@ -30,6 +39,7 @@ def custom_token_exception_handler(exc, context):
         return get_response(status.HTTP_401_UNAUTHORIZED, {}, get_status_msg('INVALID_TOKEN'))
 
     return response
+
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -83,12 +93,6 @@ def get_serializer_error_msg(error):
     return {settings.REST_FRAMEWORK["NON_FIELD_ERRORS_KEY"]: error}
 
 
-GOOGLE_ID_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
-GOOGLE_ACCESS_TOKEN_OBTAIN_URL = 'https://oauth2.googleapis.com/token'
-GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
-
-
-
 def generate_tokens_for_user(user):
     """
     Generate access and refresh tokens for the given user
@@ -100,48 +104,6 @@ def generate_tokens_for_user(user):
     return access_token, refresh_token
 
 
-# def google_get_access_token(*, code: str, redirect_uri: str) -> str:
-#     data = {
-#         'code': code,
-#         'client_id': os.getenv('GOOGLE_OAUTH2_CLIENT_ID'),
-#         'client_secret': os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET'),
-#         'redirect_uri': redirect_uri,
-#         'grant_type': 'authorization_code'
-#     }
-
-#     import requests
-#     response = requests.post(GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
-
-#     if not response.ok:
-#         raise ValidationError('Failed to obtain access token from Google.')
-
-#     access_token = response.json()['access_token']
-
-#     return access_token
-import requests
-import logging
-
-# Add logging to debug
-logger = logging.getLogger(__name__)
-
-# def google_get_access_token(code, redirect_uri):
-#     url = 'https://oauth2.googleapis.com/token'
-#     data = {
-#         'code': code,
-#         'client_id': os.getenv('GOOGLE_OAUTH2_CLIENT_ID'),
-#         'client_secret': os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET'),
-#         'redirect_uri': redirect_uri,
-#         'grant_type': 'authorization_code'
-#     }
-#     logger.debug(f"Requesting access token with redirect_uri: {redirect_uri}")
-#     response = requests.post(url, data=data)
-#     if response.status_code == 200:
-#         return response.json().get('access_token')
-#     else:
-#         logger.error(f"Failed to obtain access token: {response.json()}")
-#         raise ValidationError('Failed to obtain access token from Google.')
-
-
 def google_get_access_token(*, code: str, redirect_uri: str) -> str:
     try:
         data = {
@@ -151,7 +113,6 @@ def google_get_access_token(*, code: str, redirect_uri: str) -> str:
             'redirect_uri': redirect_uri,
             'grant_type': 'authorization_code'
         }
-        print('➡ chat_app/chat_app/utils.py:154 data pppp:', data)
 
         response = requests.post(GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
 
@@ -159,11 +120,11 @@ def google_get_access_token(*, code: str, redirect_uri: str) -> str:
             raise ValidationError('Failed to obtain access token from Google.')
 
         access_token = response.json()['access_token']
-        print('➡ chat_app/chat_app/utils.py:160 access_token:', access_token)
 
         return access_token
     except Exception as e:
-        print('e --->', e)
+        logging.error('An error occurred', exc_info=True)
+
 
 def google_get_user_info(*, access_token:  str) -> Dict[str, Any]:
     import requests

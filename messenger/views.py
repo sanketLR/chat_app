@@ -28,8 +28,8 @@ def signUp(request):
 
 def signIn(request):
 
-    if request.user.is_authenticated:
-        return redirect("rooms")
+    # if request.user.is_authenticated:
+    #     return redirect("rooms")
     
     return render(request, "signin.html")
 
@@ -171,15 +171,10 @@ class GoogleLoginApi(APIView):
             'access_token': str(access_token),
             'refresh_token': str(refresh_token)
         }
-        Token = {
-            "access" :access_token,
-            "refresh" : refresh_token
-        }
-        # Redirect to rooms after login
-        response = redirect(f'{base_frontend_url}/api/messenger/rooms/')
-        response.set_cookie('access', access_token)
-        response.set_cookie('refresh', refresh_token)
-        return response
+
+        # Redirect to rooms after login with tokens in URL
+        response_url = f'{base_frontend_url}/api/messenger/rooms/?access={access_token}&refresh={refresh_token}'
+        return redirect(response_url)
 
 
 class CreateUser(APIView):    
@@ -216,7 +211,7 @@ class SignInUser(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-
+        print("This is called.")
         username = request.data.get("username")
         password = request.data.get("password")
 
