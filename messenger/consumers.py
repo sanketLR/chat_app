@@ -15,6 +15,10 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import logging
 
 class SimpleChatConsumer(AsyncWebsocketConsumer):
+    """
+    We can use self.scope['user']
+    Here we can get the request.user 
+    """
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['name'].replace(' ', '_')
@@ -47,10 +51,10 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
         elif client_msg.get('action') == 'update_message':
             message_id = client_msg.get('message_id')
             updated_content = client_msg.get('updated_content')
-            if  updated_content  !=  "" or None:
+            if updated_content:
                 try:
                     encrypted_message_update = self.encrypt_message(updated_content)
-                    message_obj_content = await self.update_message_content(message_id, encrypted_message_update)
+                    await self.update_message_content(message_id, encrypted_message_update)
                     
                     now_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     client_msg["message_id"] = message_id
@@ -68,7 +72,7 @@ class SimpleChatConsumer(AsyncWebsocketConsumer):
                 except Exception as e:
                     logging.error(f"Error updating message: {e}")
             else:
-                logging.exception("Empty message")
+                logging.error("Empty message")
         else:
             now_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             

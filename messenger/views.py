@@ -18,6 +18,8 @@ from django.contrib.auth import (
 from django.contrib.auth import authenticate, login, logout
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth.hashers import check_password, make_password
+from urllib.parse import urlencode
+from django.utils.crypto import get_random_string
 
 
 def signUp(request):
@@ -26,8 +28,8 @@ def signUp(request):
 
 def signIn(request):
 
-    if request.user.is_authenticated:
-        return redirect("rooms")
+    # if request.user.is_authenticated:
+    #     return redirect("rooms")
     
     return render(request, "signin.html")
 
@@ -50,6 +52,129 @@ def simpleChat(request, name):
     }
     return render(request, "simplechat.html", context)
 
+
+# class GoogleLoginApi(APIView):
+#     permission_classes = [AllowAny]
+
+#     class InputSerializer(serializers.Serializer):
+#         code = serializers.CharField(required=False)
+#         error = serializers.CharField(required=False)
+
+#     def post(self, request, *args, **kwargs):
+#         input_serializer = self.InputSerializer(data=request.data)
+#         input_serializer.is_valid(raise_exception=True)
+
+#         validated_data = input_serializer.validated_data
+
+#         code = validated_data.get('code')
+#         error = validated_data.get('error')
+
+#         login_url = f'{settings.BASE_FRONTEND_URL}/login'
+    
+#         if error or not code:
+#             params = urlencode({'error': error})
+#             return redirect(f'{login_url}?{params}')
+
+#         redirect_uri = f'{settings.BASE_FRONTEND_URL}/google/'
+#         access_token = google_get_access_token(code=code, 
+#                                                redirect_uri=redirect_uri)
+        
+#         print('➡ chat_app/messenger/views.py:80 access_token:', access_token)
+
+#         user_data = google_get_user_info(access_token=access_token)
+
+#         try:
+#             user = User.objects.get(email=user_data['email'])
+#             access_token, refresh_token = generate_tokens_for_user(user)
+#             response_data = {
+#                 'user': UserSerializer(user).data,
+#                 'access_token': str(access_token),
+#                 'refresh_token': str(refresh_token)
+#             }
+#             return Response(response_data, status=status.HTTP_200_OK)
+#         except User.DoesNotExist:
+#             username = user_data['email'].split('@')[0]
+#             first_name = user_data.get('given_name', '')
+#             last_name = user_data.get('family_name', '')
+
+#             user = User.objects.create(
+#                 username=username,
+#                 email=user_data['email'],
+#                 first_name=first_name,
+#                 last_name=last_name,
+#                 registration_method='google',
+#                 phone_no=None,
+#                 referral=None
+#             )
+         
+#             access_token, refresh_token = generate_tokens_for_user(user)
+#             response_data = {
+#                 'user': UserSerializer(user).data,
+#                 'access_token': str(access_token),
+#                 'refresh_token': str(refresh_token)
+#             }
+#             return Response(response_data, status=status.HTTP_201_CREATED)
+
+class GoogleLoginApi(APIView):
+    permission_classes = [AllowAny]
+
+    class InputSerializer(serializers.Serializer):
+        code = serializers.CharField(required=False)
+        error = serializers.CharField(required=False)
+
+    def get(self, request, *args, **kwargs):
+        code = request.query_params.get('code')
+        error = request.query_params.get('error')
+        base_frontend_url = os.getenv('DJANGO_BASE_FRONTEND_URL')
+        login_url = f'{base_frontend_url}/api/messenger/signIn/'
+
+        if error or not code:
+            params = urlencode({'error': error})
+            return redirect(f'{login_url}?{params}')
+
+        redirect_uri = f'{base_frontend_url}/api/messenger/auth/login/google/'
+        try:
+            access_token = google_get_access_token(code=code, redirect_uri=redirect_uri)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+        user_data = google_get_user_info(access_token=access_token)
+        print('➡ chat_app/messenger/views.py:142 user_data:', user_data)
+
+        try:
+            user = User.objects.get(email=user_data['email'])
+            print('➡ chat_app/messenger/views.py:145 user:', user)
+        except User.DoesNotExist:
+            username = user_data['email'].split('@')[0]
+            print('➡ chat_app/messenger/views.py:148 username:', username)
+            first_name = user_data.get('given_name', '')
+            print('➡ chat_app/messenger/views.py:150 first_name:', first_name)
+            last_name = user_data.get('family_name', '')
+            print('➡ chat_app/messenger/views.py:152 last_name:', last_name)
+
+            # Set a random password
+            password = get_random_string(length=32)
+            user = User.objects.create(
+                username=username,
+                email=user_data['email'],
+                first_name=first_name,
+                last_name=last_name,
+                password=make_password(password)
+            )
+
+        # Authenticate and login the user
+        login(request, user)
+
+        access_token, refresh_token = generate_tokens_for_user(user)
+        response_data = {
+            'user': UserSerializer(user).data,
+            'access_token': str(access_token),
+            'refresh_token': str(refresh_token)
+        }
+
+        # Redirect to rooms after login with tokens in URL
+        response_url = f'{base_frontend_url}/api/messenger/rooms/?access={access_token}&refresh={refresh_token}'
+        return redirect(response_url)
 
 
 class CreateUser(APIView):    
@@ -86,7 +211,7 @@ class SignInUser(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-
+        print("This is called.")
         username = request.data.get("username")
         password = request.data.get("password")
 
