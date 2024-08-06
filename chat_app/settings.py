@@ -65,7 +65,6 @@ INSTALLED_APPS = [
 
     'user',
     'messenger',
-    'trader',
 
     'rest_framework',
 ]
