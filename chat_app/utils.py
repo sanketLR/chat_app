@@ -116,24 +116,26 @@ def google_get_access_token(*, code: str, redirect_uri: str) -> str:
 
         response = requests.post(GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
 
+        print("Google Access Token Response:", response.json())  # Log response
+
         if not response.ok:
             raise ValidationError('Failed to obtain access token from Google.')
 
-        access_token = response.json()['access_token']
-
-        return access_token
+        return response.json()['access_token']
     except Exception as e:
-        logging.error('An error occurred', exc_info=True)
+        print("Error in google_get_access_token:", str(e))  # Log error
+        raise
 
 
-def google_get_user_info(*, access_token:  str) -> Dict[str, Any]:
+def google_get_user_info(*, access_token: str) -> Dict[str, Any]:
     import requests
     response = requests.get(
-        GOOGLE_USER_INFO_URL,
-        params={'access_token': access_token}
-    )                   
+        'https://www.googleapis.com/oauth2/v3/userinfo',  # Correct URL
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
 
     if not response.ok:
-        raise ValidationError('Failed to obtain user info from Google.')
+        raise ValidationError(f'Failed to obtain user info from Google. Status code: {response.status_code}, Error: {response.text}')
 
     return response.json()
+
