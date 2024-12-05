@@ -175,15 +175,21 @@
                 editMessageId = null;
             } else if (data.event === "message_save") {
                 let html = `<div class="p-4 bg-gray-200 rounded-xl">
-                    <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
-                    <p class="font-bold text-black hover:underline">${data.username}</p>
-                    <p class="text-black message-content" data-message-id="${data.message_id}">${data.message}</p>
-                </div>`;
+                                <div class="flex justify-between items-center">
+                                    <p class="font-bold text-black hover:underline">${data.username}</p>
+                                    <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
+                                </div>
+                                <p class="text-black message-content mt-2" data-message-id="${data.message_id}">${data.message}</p>`;
+                    
                 if (username == data.username) {
-                    html += `<button class="edit-btn" data-message-id="${data.message_id}">Edit</button>`;
-                    html += `&nbsp;&nbsp`;
-                    html += `<button class="delete-btn" data-message-id="${data.message_id}">Delete</button>`;
+                    html += `<div class="flex justify-end space-x-2 mt-2">
+                                <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600" data-message-id="${data.message_id}">Edit</button>
+                                <button class="delete-btn bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600" data-message-id="${data.message_id}">Delete</button>
+                            </div>`;
                 }
+                
+                html += `</div>`;
+    
                 document.querySelector('#chat-messages').innerHTML += html;
                 scrollToBottom();
 
@@ -320,14 +326,21 @@
             if (data.status === 200) {
                 data.result.forEach(message => {
                     let html = '<div class="p-4 bg-gray-200 rounded-xl">';
-                    html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
-                    html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
-                    html += '<p class="text-black message-content" data-message-id="' + message.id + '">' + message.content + '</p></div>';
-                    if (username == message.user) {
-                        html += `<button class="edit-btn" data-message-id="${message.id}">Edit</button>`;
-                        html += `&nbsp;&nbsp`;
-                        html += `<button class="delete-btn" data-message-id="${message.id}">Delete</button>`;
-                    }
+                        html += '<div class="flex justify-between items-center">';
+                        html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
+                        html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
+                        html += '</div>';
+                        html += '<p class="text-black message-content mt-2" data-message-id="' + message.id + '">' + message.content + '</p>';
+                        
+                        // Add buttons only if the username matches
+                        if (username == message.user) {
+                            html += '<div class="flex justify-end space-x-2 mt-2">';
+                            html += '<button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600" data-message-id="' + message.id + '">Edit</button>';
+                            html += '<button class="delete-btn bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600" data-message-id="' + message.id + '">Delete</button>';
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
                     document.querySelector('#chat-messages').innerHTML += html;
                 });
 
