@@ -1,13 +1,29 @@
 function checkToken() {
     if (localStorage.getItem('accessToken') == null) {
-
-        window.location = "http://127.0.0.1:8000/api/messenger/signIn/";
-
+        window.location = "http://127.0.0.1:8000/api/messenger/signUp/";
     }
 }
-checkToken();
 
-$(document).ready(function () {
+function getQueryParams() {
+    const params = {};
+    window.location.search.substr(1).split("&").forEach(function (item) {
+        const [key, value] = item.split("=");
+        params[key] = decodeURIComponent(value);
+    });
+    return params;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const queryParams = getQueryParams();
+    if (queryParams.access && queryParams.refresh) {
+        localStorage.setItem("accessToken", queryParams.access);
+        localStorage.setItem("refreshToken", queryParams.refresh);
+        window.history.replaceState({}, document.title, "http://127.0.0.1:8000/api/messenger/rooms/");
+    }
+    setTimeout(() => {
+        console.log("document.title", document.title);
+    }, 2000);
+    checkToken();
 
     const accessToken = localStorage.getItem("accessToken");
 
@@ -21,7 +37,7 @@ $(document).ready(function () {
         dataType: 'json',
         success: function (data) {
             if (data.code === 200) {
-                console.log("response 200");
+                console.log("response 200 while check access token ");
             } else {
                 window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
             }
@@ -33,8 +49,6 @@ $(document).ready(function () {
         error: function (error) {
             console.error('Error:', error.message);
             window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
-
         }
     });
-
 });
