@@ -72,7 +72,7 @@
                 
                   <script>
                     const REACT_APP_GOOGLE_CLIENT_ID = '590373011409-0905p9bgma16h4ulv6ln01retc7e31co.apps.googleusercontent.com';
-                    const REACT_APP_GOGGLE_REDIRECT_URL_ENDPOINT = "http://127.0.0.1:8000/api/messenger/auth/login/google/";
+                    const REACT_APP_GOGGLE_REDIRECT_URL_ENDPOINT = "https://kwickchat.pythonanywhere.com/api/messenger/auth/login/google/";
             
                     const googleLoginButton = document.getElementById('googleLoginButton');
                     const userInfo = document.getElementById('userInfo');
@@ -143,7 +143,7 @@
             }
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/messenger/CreateUser/', {
+                const response = await fetch('https://kwickchat.pythonanywhere.com/api/messenger/CreateUser/', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrfToken,
@@ -158,7 +158,7 @@
 
                 if(data.code === 200){
                     
-                    window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
+                    window.location.href = "https://kwickchat.pythonanywhere.com/api/messenger/signIn/";
 
                 }
 
