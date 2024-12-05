@@ -24,7 +24,7 @@
         };
     
         try {
-            const response = await fetch('https://kwickchat.pythonanywhere.com/api/messenger/UserLogout/', {
+            const response = await fetch('http://127.0.0.1:8000/api/messenger/UserLogout/', {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
@@ -43,7 +43,7 @@
                 localStorage.removeItem("refreshToken")
                 localStorage.removeItem("accessToken")
 
-                window.location.href = "https://kwickchat.pythonanywhere.com/api/messenger/signIn/";
+                window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
             }
     
             if (data.code === 400) {

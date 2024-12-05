@@ -91,7 +91,7 @@
         const refreshToken = localStorage.getItem("refreshToken");
 
         $.ajax({
-            url: 'https://kwickchat.pythonanywhere.com/api/messenger/RoomsList/',
+            url: 'http://127.0.0.1:8000/api/messenger/RoomsList/',
             type: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -122,7 +122,7 @@
                         createRoomModalButton();
                     }
                 } else {
-                    window.location.href = "https://kwickchat.pythonanywhere.com/api/messenger/signIn/";
+                    window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
                 }
     
                 if (data.code === 400) {
@@ -212,7 +212,7 @@
             const refreshToken = localStorage.getItem("refreshToken");
 
             $.ajax({
-                url: `https://kwickchat.pythonanywhere.com/api/messenger/RoomsDelete/${roomId}/`,
+                url: `http://127.0.0.1:8000/api/messenger/RoomsDelete/${roomId}/`,
                 type: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -226,7 +226,7 @@
 
                     } else {
 
-                        window.location.href = "https://kwickchat.pythonanywhere.com/api/messenger/signIn/";
+                        window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
 
                     }
         

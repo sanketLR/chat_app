@@ -1,6 +1,6 @@
 function checkToken() {
     if (localStorage.getItem('accessToken') == null) {
-        window.location = "https://kwickchat.pythonanywhere.com/api/messenger/signUp/";
+        window.location = "http://127.0.0.1:8000/api/messenger/signUp/";
     }
 }
 
@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (queryParams.access && queryParams.refresh) {
         localStorage.setItem("accessToken", queryParams.access);
         localStorage.setItem("refreshToken", queryParams.refresh);
-        window.history.replaceState({}, document.title, "https://kwickchat.pythonanywhere.com/api/messenger/rooms/");
+        window.history.replaceState({}, document.title, "http://127.0.0.1:8000/api/messenger/rooms/");
     }
     setTimeout(() => {
         console.log("document.title", document.title);
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const accessToken = localStorage.getItem("accessToken");
 
     $.ajax({
-        url: 'https://kwickchat.pythonanywhere.com/api/messenger/CheckToken/',
+        url: 'http://127.0.0.1:8000/api/messenger/CheckToken/',
         type: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (data.code === 200) {
                 console.log("response 200 while check access token ");
             } else {
-                window.location.href = "https://kwickchat.pythonanywhere.com/api/messenger/signIn/";
+                window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
             }
 
             if (data.code === 400) {
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         error: function (error) {
             console.error('Error:', error.message);
-            window.location.href = "https://kwickchat.pythonanywhere.com/api/messenger/signIn/";
+            window.location.href = "http://127.0.0.1:8000/api/messenger/signIn/";
         }
     });
 });
