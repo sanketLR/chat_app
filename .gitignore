@@ -1,3 +1,15 @@
+#Environment
 env
 migrations
 __pycache__
+<<<<<<< Updated upstream
+
+#env for cred.
+.env
+
+#db
+db.sqlite3
+=======
+db.sqlite3
+.env
+>>>>>>> Stashed changes

@@ -1,0 +1,127 @@
+<div id="overlay" class="hidden fixed inset-0 bg-gray-800 bg-opacity-70 z-40"></div>
+
+<!-- Main modal -->
+<div id="authentication-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+    <div class="relative p-4 w-full max-h-full">
+        <!-- Modal content -->
+        <div class="relative bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 text-white font-serif rounded-lg shadow dark:bg-gray-700 mx-auto">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                <h3 class="text-xl font-semibold">
+                    Create Room
+                </h3>
+                <button type="button" class="">
+                   
+                </button>
+                <span type="button" id="hideModal" class="px-3 py-2 text-xs font-small text-center inline-flex items-center bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" data-modal-hide="authentication-modal">
+                    ⨯
+                </span>
+            </div>
+            <!-- Modal body -->
+            <div class="p-4 md:p-5">
+                <form id="createRoomFrom" class="space-y-4" action="#" method="post">
+                    {% csrf_token %}
+                    <div>
+                        <label for="room_name" class="block mb-2 text-xl font-medium text-white">Name :</label>
+                        <input type="text" name="room_name" id="room_name" class="bg-gray-50 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-whiten text-center" placeholder="Room Name" required>
+                        <span id="room_name_error" class="text-red-500 hidden">Required</span>
+                        <br>
+                        <label for="room_discription" class="block mb-2 text-xl font-medium text-white">Description :</label>
+                        <input type="text" name="room_discription" id="room_discription" class="bg-gray-50 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-whiten text-center" placeholder="Room Description" required>
+                        <span id="room_discription_error" class="text-red-500 hidden">Required</span>
+                    </div>
+                
+                    <span type="button" id="createRooms" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        <span id="createRoomText">Create Room</span>
+                        <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                        </svg>
+                        <span id="spinner" class="hidden ms-2">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                        </span>
+                    </span>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function createRoomFunc() {
+        let userName = document.getElementById("room_name").value;
+        let password = document.getElementById("room_discription").value;
+
+        if (!userName) {
+            document.getElementById("room_name_error").classList.remove("hidden");
+            return; // Stop execution if the name is empty
+        } else {
+            document.getElementById("room_name_error").classList.add("hidden");
+        }
+
+        if (!password) {
+            document.getElementById("room_discription_error").classList.remove("hidden");
+            return; // Stop execution if the description is empty
+        } else {
+            document.getElementById("room_discription_error").classList.add("hidden");
+        }
+
+        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        let Jsondata = {
+            "cr_name": userName,
+            "cr_discription": password
+        };
+
+        document.getElementById("createRoomText").classList.add("hidden");
+        document.getElementById("spinner").classList.remove("hidden");
+
+        try {
+            $.ajax({
+                url: 'http://127.0.0.1:8000/api/messenger/RoomsCreate/',
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                data: JSON.stringify(Jsondata),
+                dataType: 'json',
+                success: function (data) {
+                    document.getElementById("createRoomText").classList.remove("hidden");
+                    document.getElementById("spinner").classList.add("hidden");
+
+                    if (data.code === 200) {
+                        window.location.reload();
+                    }
+
+                    if (data.code === 400) {
+                        console.log("data", data);
+                        console.log("400 come");
+                    }
+                },
+                error: function (error) {
+                    document.getElementById("createRoomText").classList.remove("hidden");
+                    document.getElementById("spinner").classList.add("hidden");
+
+                    console.error('Error:', error.statusText);
+                }
+            });
+        } catch (error) {
+            document.getElementById("createRoomText").classList.remove("hidden");
+            document.getElementById("spinner").classList.add("hidden");
+
+            console.error('Error:', error.message);
+        }
+    }
+
+    document.getElementById("createRooms").addEventListener("click", createRoomFunc);
+        
+</script>
+    

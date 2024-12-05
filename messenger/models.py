@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 class Chat_Room(models.Model):
     cr_name = models.CharField(max_length=200, blank= True, null= True)
     cr_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-
+    cr_discription = models.CharField(max_length = 200, blank = True, null = True)
+    
     def __str__(self):
         return self.cr_name
 
@@ -20,5 +21,5 @@ class Message(models.Model):
         ordering = ('date_added',)
     
     def __str__(self):
-        return self.content + "  from -> " + self.user.username
+        return self.content + "  from -> " + self.user.username + " " + self.room.cr_name
     

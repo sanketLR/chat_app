@@ -1,181 +1,415 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 {% load static %}
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <link rel="shortcut icon" href="{% static '/img/logomy.png' %}">
-        <title>
+{% block content %}
 
-        </title>
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <style>
+{% block nav %}
+{% include "navbar.html" %}
+{% endblock nav %}
 
-        .chat-messages{
-            height:500px;
-            overflow-y:auto;
-        }
-        .chat-messages::-webkit-scrollbar {
+<script src="{% static " js/check_token.js" %}"></script>
+
+<style>
+    .chat-messages {
+        height: calc(100vh - 350px);
+        overflow-y: auto;
+    }
+
+    .chat-messages::-webkit-scrollbar {
         display: none;
     }
-    </style>
+
+    .flex-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .chat-messages {
+            height: 100vh;
+        }
+
+        .flex-container {
+            flex-direction: row;
+        }
+
+        .icon-button {
+            padding: 10px;
+        }
+    }
+
+    .icon-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        color: #4A5568;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.1s ease, background-color 0.1s ease;
+    }
+
+    .icon-button:hover {
+        transform: scale(1.2);
+    }
+
+    .icon-button:active {
+        transform: scale(1.1);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .chat-messages {
+            height: calc(100vh - 350px);
+        }
+    }
+
+    #deleteModal {
+        display: none;
+        position: fixed; /* Ensure it stays fixed relative to the viewport */
+        inset: 0; /* Set top, right, bottom, and left to 0 to cover the entire viewport */
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent background */
+        z-index: 50; /* Ensure it appears on top of other elements */
+    }
+
+    #deleteModal.show {
+        display: flex;
+    }
+</style>
+
 <body class="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900">
-    <div id="preloader" class="fixed top-0 left-0 w-screen h-screen flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
+    <div id="preloader"
+        class="fixed top-0 left-0 w-screen h-screen flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
         <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-blue-500"></div>
     </div>
     <div class="p-10 lg:p-10 text-center">
-        <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">{{room.cr_name}}</h1>
-        <h5 class=" text-white">{{request.user.username}}</h5>
+        <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">{{ room.cr_name }}</h1>
+        <h5 class="text-white">{{ request.user.username }}</h5>
     </div>
 
-    <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl ">
-        <div class="chat-messages space-y-3" id="chat-messages">
-            <!-- {% if messages %}
-                {% for message in messages %}
-                    <div class="p-4 t bg-gray-200 rounded-xl   ">
-                    
-                        <small><p class="font-bold text-right  opacity-50">{{message.date_added}}</p></small>
-                        <p class="font-bold">{{message.user.admin.username}}</p>
-                        
-                        <p class="font-bold ">{{message.user2.admin.username}}</p>
-                        
-                        <p>{{message.content}}</p>
-                    </div>
-                {% endfor %}
-            {% else %}
-             <h1 class="text-3xl lg:text-6xl text-white font-bold drop-shadow-xl">No Message Avaliabe</h1>
-            {% endif %} -->
-            
+    <div class="lg:w-2/4 mx-4 lg:mx-auto p-4 bg-transparent border rounded-xl drop-shadow-xl">
+        <div class="chat-messages space-y-3" id="chat-messages"></div>
+    </div>
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-xl p-6 w-11/12 max-w-sm shadow-lg">
+            <h2 class="text-lg font-medium text-center text-white mb-3">Delete message?</h2>
+            <p class="text-sm text-gray-300 text-center mb-6">
+                This action cannot be undone. Do you want to delete this message for everyone?
+            </p>
+            <div class="space-y-2">
+                <button id="confirmDelete"
+                    class="w-full bg-red-600 text-white font-medium text-sm py-3 rounded-lg hover:bg-red-700 transition">
+                    Delete for Everyone
+                </button>
+                <button id="cancelDelete"
+                    class="w-full bg-gray-700 text-gray-300 font-medium text-sm py-3 rounded-lg hover:bg-gray-600 transition">
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
+
+
     <div class="lg:w-2/4 mt-6 mx-4 lg:mx-auto p-4 bg-white rounded-xl drop-shadow-xl">
-        <form action="." method="POST" class="flex">
+        <form action="." method="POST" class="flex-container">
             {% csrf_token %}
-            <input type="text" name="content" class="flex-1 mr-3" placeholder="Your message..." id="chat-message-input">
-            <button class="px-5 py-3 rounded-xl text-white  bg-gray-800 hover:bg-gray-700" id="chat-message-submit">Send</button>
+            <input type="text" name="content" class="flex-1 mr-3 text-black" placeholder="Your message..."
+                id="chat-message-input">
+            <button type="button" class="icon-button hidden" id="chat-message-clear">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="icon-button" id="chat-message-submit">
+                <i class="fas fa-paper-plane"></i>&nbsp;
+            </button>
         </form>
-    </div><br>
+    </div>
+    <br>
 </body>
 
 {% block script %}
-{{request.user.username | json_script:"json-username"}}
+{{ request.user.username | json_script:"json-username" }}
+{{ room_name | json_script:"json-room_name" }}
+
 <script>
+    const username = JSON.parse(document.getElementById("json-username").textContent);
+    const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
+    const ws = new WebSocket('ws://' + window.location.host + '/ws/grouptchat/' + roomName + '/');
 
-document.getElementById('preloader').style.display = 'flex';
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatForm = document.querySelector('form.flex-container');
+        const clearButton = document.getElementById('chat-message-clear');
+        const sendButton = document.getElementById('chat-message-submit');
+        const messageInput = document.getElementById('chat-message-input');
 
-document.addEventListener('DOMContentLoaded', async function () {
-    // ... (existing code)
+        ws.onopen = function () {
+            console.log("WebSocket Connection open...");
+        };
 
-    // Call the function to load chat data when the page is loaded
-    await loadChatData();
-    // ... (existing code)
-});
+        ws.onmessage = function (e) {
+            const data = JSON.parse(e.data);
 
-async function loadChatData() {
-    try {
-        // Make an AJAX request to fetch chat data from the API
-        const response = await fetch('https://5dcb-150-107-118-139.ngrok-free.app/api/messenger/LoadChatData/');
-        const data = await response.json();
-
-        if (data.status === 200) {
-            // Loop through the result array and append messages to the chat box
-            data.result.forEach(message => {
-                let html = '<div class="p-4 bg-gray-200 rounded-xl">';
-                html += '<small><p class="font-bold text-right opacity-50">' + message.date_added + '</p></small>';
-                html += '<p class="font-bold">' + message.user + '</p>';
-                html += '<p>' + message.content + '</p></div>';
-
-                document.querySelector('#chat-messages').innerHTML += html;
-            });
-
-            // Scroll to the bottom after loading messages
-            scrollToBottom();
-        } else {
-            console.error('Failed to fetch chat data.');
-        }
-    } catch (error) {
-        console.error('Error fetching chat data:', error);
-    } finally {
-        // Hide the preloader when the data is loaded
-        document.getElementById('preloader').style.display = 'none';
-    }
-}
-
-function scrollToBottom() {
-    const objDiv = document.querySelector('#chat-messages');
-    objDiv.scrollTop = objDiv.scrollHeight;
-}
-
-    var ws = new WebSocket('wss://5dcb-150-107-118-139.ngrok-free.app/ws/grouptchat/python_chat/')
-    const username = JSON.parse(document.getElementById("json-username").textContent)
-    // Wait for the document to be ready
-    document.addEventListener('DOMContentLoaded', function() {
-        // using Method 
-        ws.onopen = function (){
-            console.log("WebSocket Connection open...")
-           
-        }
-
-        ws.onmessage = function(e){
-
-            e.preventDefault();
-
-            const data = JSON.parse(e.data)
-            console.log("Outerdata --> ",data);
-
-
-            if(data.message){
-                let html = ' <div class="p-4 bg-gray-200 rounded-xl  ">';
-                    html += '<small><p class="font-bold text-right opacity-50"">' + data.now_time + '</p></small>';
-                    html += '<p class="font-bold">' + data.username + '</p>';
+            if (data.event === 'message_deleted') {
+                console.log("Msg deleted form BE")
+                const messageId = data.message_id;
+                const messageElement = document.querySelector(`.message-content[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.closest('div').remove();
+                    document.querySelectorAll(`button[data-message-id="${messageId}"]`).forEach(button => button.remove());
+                }
+            } else if (data.event === 'message_updated') {
+                const messageId = data.message_id;
+                const updatedContent = data.message;
+                const messageElement = document.querySelector(`.message-content[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.textContent = updatedContent;
+                }
+                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
+                clearButton.classList.add('hidden');
+                editMode = false;
+                editMessageId = null;
+            } else if (data.event === "message_save") {
+                let html = `<div class="p-4 bg-gray-200 rounded-xl">
+                                <div class="flex justify-between items-center">
+                                    <p class="font-bold text-black hover:underline">${data.username}</p>
+                                    <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
+                                </div>
+                                <p class="text-black message-content mt-2" data-message-id="${data.message_id}">${data.message}</p>`;
                     
-                    html += '<p>'+ data.message + '</p></div>';
+                if (username == data.username) {
+                    html += `<div class="flex justify-end space-x-2 mt-2">
+                                <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600" data-message-id="${data.message_id}">Edit</button>
+                                <button class="delete-btn bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600" data-message-id="${data.message_id}">Delete</button>
+                            </div>`;
+                }
                 
+                html += `</div>`;
+    
                 document.querySelector('#chat-messages').innerHTML += html;
                 scrollToBottom();
-            }
-            else{
+
+                document.querySelectorAll(`.edit-btn`).forEach(function (editButton) {
+                    editButton.addEventListener('click', function () {
+                        const messageId = this.getAttribute('data-message-id');
+                        const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+                        messageInput.value = messageContent.trim();
+                        sendButton.innerHTML = '<i class="fas fa-edit"></i>';
+                        clearButton.classList.remove('hidden');
+
+                        editMode = true;
+                        editMessageId = messageId;
+
+                        localStorage.setItem('editMessageId', messageId);
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(function (deleteButton) {
+                    deleteButton.addEventListener('click', function () {
+                        const deleteMessageId = this.getAttribute('data-message-id');
+                        const deleteModal = document.getElementById('deleteModal');
+                        const confirmDelete = document.getElementById('confirmDelete');
+                        const cancelDelete = document.getElementById('cancelDelete');
+
+                        deleteModal.classList.add('show');
+
+                        confirmDelete.onclick = function () {
+                            ws.send(JSON.stringify({
+                                action: 'delete_message',
+                                message_id: deleteMessageId
+                            }));
+                            deleteModal.classList.remove('show');
+                        };
+
+                        cancelDelete.onclick = function () {
+                            deleteModal.classList.remove('show');
+                        };
+                    });
+                });
+            } else if (data.pong) {
+                return;
+            } else {
                 alert('Msg was empty');
             }
-            // Handle incoming messages if needed
+        };
+
+        ws.onerror = function () {
+            console.log("WebSocket error occurred ...");
+        };
+
+        function sendPing() {
+            ws.send(JSON.stringify({ "ping": "ping" }));
         }
 
-        ws.onerror = function(event){
-            console.log("WebSocket error occurred ...")
-        }
+        const pingInterval = setInterval(sendPing, 10000);
 
-        ws.onclose = function(event){
-            console.log("Connection closed ...")
-        }
-        
-        function scrollToBottom(){
+        ws.onclose = function () {
+            console.log("Connection closed ...");
+            clearInterval(pingInterval);
+        };
+
+        function scrollToBottom() {
             const objDiv = document.querySelector('#chat-messages');
             objDiv.scrollTop = objDiv.scrollHeight;
         }
 
         scrollToBottom();
-        // Get the form element
-        var chatForm = document.querySelector('form.flex');
 
-        // Attach an event listener to the form's submit event
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent the default form submission behavior
+        chatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const getInputText = messageInput.value.trim();
 
-            // Get the input text from the textarea
-            var getInputText = document.getElementById("chat-message-input").value;
+            if (getInputText == '' || getInputText == null) {
+                alert('Please enter a text')
+            }
 
-            // Send the message to the server
-            ws.send(JSON.stringify({
-                "msg": getInputText,
-                "user": username
-            }));
+            const localEditMode = typeof editMode !== 'undefined' ? editMode : false;
+            const localEditMessageId = typeof editMessageId !== 'undefined' ? editMessageId : null;
 
-            // Clear the input field if needed
-            document.getElementById("chat-message-input").value = "";
+            if (localEditMode && localEditMessageId) {
+                ws.send(JSON.stringify({
+                    action: 'update_message',
+                    message_id: localEditMessageId,
+                    updated_content: getInputText
+                }));
+                localStorage.removeItem('editMessageId');
+            } else {
+                ws.send(JSON.stringify({
+                    "msg": getInputText,
+                    "user": username,
+                    "room": roomName,
+                }));
+            }
+
+            messageInput.value = "";
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
+            clearButton.classList.add('hidden');
+
+            editMode = false;
+            editMessageId = null;
         });
+
+        clearButton.addEventListener('click', function () {
+            messageInput.value = "";
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp;';
+            clearButton.classList.add('hidden');
+
+            editMode = false;
+            editMessageId = null;
+
+            localStorage.removeItem('editMessageId');
+        });
+
+        loadChatData();
+    });
+
+    async function loadChatData() {
+        try {
+            const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
+            const accessToken = localStorage.getItem("accessToken");
+
+            const response = await fetch('http://127.0.0.1:8000/api/messenger/LoadChatData/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(roomName)
+            });
+
+            const data = await response.json();
+
+            if (data.status === 200) {
+                data.result.forEach(message => {
+                    let html = '<div class="p-4 bg-gray-200 rounded-xl">';
+                        html += '<div class="flex justify-between items-center">';
+                        html += '<p class="font-bold text-black hover:underline">' + message.user + '</p>';
+                        html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
+                        html += '</div>';
+                        html += '<p class="text-black message-content mt-2" data-message-id="' + message.id + '">' + message.content + '</p>';
+                        
+                        // Add buttons only if the username matches
+                        if (username == message.user) {
+                            html += '<div class="flex justify-end space-x-2 mt-2">';
+                            html += '<button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600" data-message-id="' + message.id + '">Edit</button>';
+                            html += '<button class="delete-btn bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600" data-message-id="' + message.id + '">Delete</button>';
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
+                    document.querySelector('#chat-messages').innerHTML += html;
+                });
+
+                scrollToBottom();
+
+                document.querySelectorAll('.delete-btn').forEach(function (deleteButton) {
+                    deleteButton.addEventListener('click', function () {
+                        const deleteMessageId = this.getAttribute('data-message-id');
+                        const deleteModal = document.getElementById('deleteModal');
+                        const confirmDelete = document.getElementById('confirmDelete');
+                        const cancelDelete = document.getElementById('cancelDelete');
+
+                        deleteModal.classList.add('show');
+
+                        confirmDelete.onclick = function () {
+                            ws.send(JSON.stringify({
+                                action: 'delete_message',
+                                message_id: deleteMessageId
+                            }));
+                            deleteModal.classList.remove('show');
+                        };
+
+                        cancelDelete.onclick = function () {
+                            deleteModal.classList.remove('show');
+                        };
+                    });
+                });
+
+                document.querySelectorAll(`.edit-btn`).forEach(function (editButton) {
+                    editButton.addEventListener('click', function () {
+                        const messageId = this.getAttribute('data-message-id');
+                        const messageContent = document.querySelector('.message-content[data-message-id="' + messageId + '"]').textContent;
+                        document.getElementById('chat-message-input').value = messageContent.trim();
+                        document.getElementById('chat-message-submit').innerHTML = '<i class="fas fa-edit"></i>';
+                        document.getElementById('chat-message-clear').classList.remove('hidden');
+
+                        editMode = true;
+                        editMessageId = messageId;
+
+                        localStorage.setItem('editMessageId', messageId);
+                    });
+                });
+            } else {
+                console.error('Failed to fetch chat data.');
+                window.location = "http://127.0.0.1:8000/api/messenger/signIn/";
+            }
+        } catch (error) {
+            console.error('Error fetching chat data:', error);
+        } finally {
+            document.getElementById('preloader').style.display = 'none';
+        }
+    }
+
+    function scrollToBottom() {
+        const objDiv = document.querySelector('#chat-messages');
+        objDiv.scrollTop = objDiv.scrollHeight;
+    }
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function (e) {
+        e.preventDefault();
+
+        let getSignUpLink = document.getElementById("SignUpLink");
+        let getSignInLink = document.getElementById("SignInLink");
+
+        getSignUpLink.remove();
+        getSignInLink.remove();
     });
 </script>
+
 {% endblock script %}
-</html>
+{% endblock content %}
