@@ -139,7 +139,7 @@
 <script>
     const username = JSON.parse(document.getElementById("json-username").textContent);
     const roomName = JSON.parse(document.getElementById("json-room_name").textContent);
-    const ws = new WebSocket('ws://' + window.location.host + '/ws/grouptchat/' + roomName + '/');
+    const ws = new WebSocket('wss://' + window.location.host + '/ws/grouptchat/' + roomName + '/');
 
     document.addEventListener('DOMContentLoaded', function () {
         const chatForm = document.querySelector('form.flex-container');
@@ -180,16 +180,16 @@
                                     <small><p class="font-bold text-right text-black opacity-50">${data.now_time}</p></small>
                                 </div>
                                 <p class="text-black message-content mt-2" data-message-id="${data.message_id}">${data.message}</p>`;
-                    
+
                 if (username == data.username) {
                     html += `<div class="flex justify-end space-x-2 mt-2">
                                 <button class="edit-btn bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600" data-message-id="${data.message_id}">Edit</button>
                                 <button class="delete-btn bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600" data-message-id="${data.message_id}">Delete</button>
                             </div>`;
                 }
-                
+
                 html += `</div>`;
-    
+
                 document.querySelector('#chat-messages').innerHTML += html;
                 scrollToBottom();
 
@@ -331,7 +331,7 @@
                         html += '<small><p class="font-bold text-right opacity-50 text-black">' + message.date_added + '</p></small>';
                         html += '</div>';
                         html += '<p class="text-black message-content mt-2" data-message-id="' + message.id + '">' + message.content + '</p>';
-                        
+
                         // Add buttons only if the username matches
                         if (username == message.user) {
                             html += '<div class="flex justify-end space-x-2 mt-2">';
@@ -339,7 +339,7 @@
                             html += '<button class="delete-btn bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600" data-message-id="' + message.id + '">Delete</button>';
                             html += '</div>';
                         }
-                        
+
                         html += '</div>';
                     document.querySelector('#chat-messages').innerHTML += html;
                 });

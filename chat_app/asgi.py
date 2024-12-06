@@ -10,7 +10,7 @@ application = ProtocolTypeRouter({
     "http":get_asgi_application(),
     "websocket":AuthMiddlewareStack(
         URLRouter(
-            messenger.routing.websocket_urlpatterns 
+            messenger.routing.websocket_urlpatterns
         )
     )
 })

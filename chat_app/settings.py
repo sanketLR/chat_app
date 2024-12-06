@@ -27,7 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m)c@bq08b$%47)-6ego98p9d2=*+bpn@@7!lq+s#rf8$7p4n)k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = False
+
 # Configure the database logger
 # LOGGING = {
 #     'version': 1,
@@ -46,7 +48,7 @@ DEBUG = True
 # }
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://127.0.0.1:8000"]
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://127.0.0.1:8000", "https://kwickchat.pythonanywhere.com/"]
 
 # Application definition
 
@@ -100,20 +102,30 @@ TEMPLATES = [
 
 ASGI_APPLICATION = 'chat_app.asgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
+# # CHANNEL_LAYERS = {
+# #     "default": {
+# #         "BACKEND": "channels_redis.core.RedisChannelLayer",
+# #         "CONFIG": {
+# #             "hosts": [("127.0.0.1", 6379)],
+# #         },
+# #     },
+# # }
 # CHANNEL_LAYERS = {
 #     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer",
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("redis://default:RfEjVMplL2YzcI43E1EonKQxB02NThGS@redis-18825.c81.us-east-1-2.ec2.redns.redis-cloud.com:18825")],
+#         },
 #     },
 # }
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
+
 
 
 # Database
@@ -162,9 +174,26 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATIC_URL = "/static/"
+# STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+# # # STATIC_ROOT = os.path.join(BASE_DIR, "static")
+# # STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# # STATIC_URL = "/static/"
+# # URL to serve static files
+# STATIC_URL = '/static/'
+
+# # Absolute path where static files are collected
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# # Optional: Add static directories if needed
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static'),
+# ]
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Development static files directory
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Collected static files for deployment
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
