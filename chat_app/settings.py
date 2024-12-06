@@ -102,11 +102,11 @@ TEMPLATES = [
 
 ASGI_APPLICATION = 'chat_app.asgi.application'
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-    },
-}
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer",
+#     },
+# }
 
 # # CHANNEL_LAYERS = {
 # #     "default": {
@@ -116,14 +116,14 @@ CHANNEL_LAYERS = {
 # #         },
 # #     },
 # # }
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("redis://default:RfEjVMplL2YzcI43E1EonKQxB02NThGS@redis-18825.c81.us-east-1-2.ec2.redns.redis-cloud.com:18825")],
-#         },
-#     },
-# }
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis://default:RfEjVMplL2YzcI43E1EonKQxB02NThGS@redis-18825.c81.us-east-1-2.ec2.redns.redis-cloud.com:18825")],
+        },
+    },
+}
 
 
 
